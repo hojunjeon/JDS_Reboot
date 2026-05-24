@@ -18,6 +18,7 @@ from ouroboros.interview import InterviewEngine, InterviewState
 from ouroboros.execution import DoubleDiamondPlanner
 from ouroboros.evaluation import verify as run_evaluation_verify
 from ouroboros.resilience import WorkspaceTracker, StagnationDetector, LateralAdvisor, load_history, save_history
+from ouroboros.evolution import EvolutionEngine
 
 app = typer.Typer(
     help="Ouroboros Lite - Specification-first AI coding workflow engine.",
@@ -192,6 +193,86 @@ def status(
 
 
 @app.command()
+def evolve(
+    files: Optional[List[str]] = typer.Argument(None, help="List of Python files to evaluate. Auto-discovers active files if omitted."),
+    seed: str = typer.Option("ouroboros_seed.yaml", "--seed", "-s", help="Path to seed requirements yaml file"),
+    tests: str = typer.Option("tests", "--tests", "-t", help="Directory or file containing pytest units"),
+    agents: str = typer.Option("AGENTS.md", "--agents", "-a", help="Path to binding session rules file"),
+    history: str = typer.Option(".ouroboros_history.json", "--history", "-h", help="Path to history file"),
+):
+    """Executes the Phase 5 Evolution and Anti-Regression Patching.
+    
+    Diagnoses mechanical, semantic, and stagnation failures, synthesizes permanent
+    anti-regression constraints and binding session rules, and patches them back.
+    """
+    # 1. Seed spec check
+    if not os.path.exists(seed):
+        console.print(f"[bold red]Error: Seed specification file not found at '{seed}'.[/bold red]")
+        raise typer.Exit(code=1)
+
+    # 2. Auto-discover Python files if none specified
+    if not files:
+        files = []
+        exclude_dirs = {".git", ".venv", "venv", "__pycache__", "tests"}
+        for root, dirs, filenames in os.walk("."):
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            for f in filenames:
+                if f.endswith(".py") and f != "run_ouroboros.py":
+                    files.append(os.path.join(root, f))
+                    
+        if not files:
+            console.print("[bold red]Error: No Python files found in the current workspace to evaluate.[/bold red]")
+            raise typer.Exit(code=1)
+
+    normalized_files = [os.path.normpath(f) for f in files]
+    
+    console.print("[bold cyan]🔄 Running diagnostic scans across all development stages...[/bold cyan]")
+    
+    try:
+        engine = EvolutionEngine(seed_path=seed, agents_path=agents, history_path=history)
+        failures = engine.diagnose_workspace(normalized_files, test_path=tests)
+        
+        if not failures:
+            console.print(Panel(
+                Text("✅ System Health Clear!\n\nNo active syntax errors, linter violations, test breaks, or stagnation loops detected in the workspace.",
+                     style="bold green"),
+                title="Evolution Succeeded",
+                border_style="green",
+                expand=False
+            ))
+            return
+
+        console.print(f"[yellow]⚠️ Diagnosed {len(failures)} failures. Synthesizing anti-regression patches...[/yellow]")
+        patches = engine.generate_patches(failures)
+        
+        console.print("[yellow]🔧 Applying permanent spec patches and binding rules to prevent recurrence...[/yellow]")
+        yaml_patched, agents_patched = engine.apply_patches(patches)
+        
+        # Output markdown report
+        console.print("\n")
+        console.print(Panel(
+            Text(f"🎉 Ouroboros has successfully evolved!\n\n"
+                 f" - ouroboros_seed.yaml: Added {yaml_patched} new system constraints.\n"
+                 f" - AGENTS.md: Added {agents_patched} new binding session rules.\n\n"
+                 f"Future coding sessions and execution planning will now strictly follow these patches to prevent reoccurrence.",
+                 style="bold green"),
+            title="System Self-Healed",
+            border_style="green",
+            expand=False
+        ))
+        
+        # Also print detailed logs if any changes made
+        console.print("\n[bold cyan]📋 Detailed Anti-Regression Patches Applied:[/bold cyan]")
+        for idx, p in enumerate(patches, 1):
+            console.print(f"  [bold]{idx}. Recurrence Prevention Rule:[/bold] [italic]\"{p.session_rule}\"[/italic]")
+            console.print(f"     [bold]System Constraint Patched:[/bold] [dim]\"{p.constraint}\"[/dim]")
+            
+    except Exception as e:
+        console.print(f"[bold red]Failed during evolution phase: {e}[/bold red]")
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def welcome():
     """Outputs the onboarding and welcome guide for Ouroboros Lite."""
     console.print(Panel(
@@ -205,6 +286,7 @@ def welcome():
              "  - plan       - Sort criteria and generate Double Diamond plan\n"
              "  - evaluate   - Mechanical & semantic 3-stage validation\n"
              "  - status     - Snapshot workspace & stagnation checks\n"
+             "  - evolve     - Retrospectively patch specs to prevent regression\n"
              "  - welcome    - Onboarding guide", 
              style="bold magenta", justify="center"),
         border_style="magenta",
