@@ -1,0 +1,2 @@
+#!/bin/sh
+agy --dangerously-skip-permissions "$@"
