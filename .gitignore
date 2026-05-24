@@ -1,0 +1,30 @@
+# Obsidian
+.obsidian/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment variables (never commit actual secrets)
+.env
+*.env.local
+
+# AI workspace scratch files (session-specific temp files)
+.ai-workspace/scratch/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Ouroboros runtime state (auto-generated, not needed in git)
+.ouroboros_history.json
+
+# IDE / CLI workspace states
+.antigravitycli/
