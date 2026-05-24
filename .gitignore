@@ -28,3 +28,10 @@ Thumbs.db
 
 # IDE / CLI workspace states
 .antigravitycli/
+
+# Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
