@@ -8,13 +8,27 @@ acceptance_criteria_tree:
   depends_on: []
   children:
   - id: 101
-    description: Menu provides 'Start Game' and 'Stage Selection' command inputs.
+    description: Menu provides 'Start Game', 'Stage Selection', and 'Weapon Selection'
+      command inputs.
     status: pending
     depends_on:
     - 100
     children: []
   - id: 102
-    description: Terminal boot-up sequence animation plays upon launching.
+    description: Terminal boot-up sequence animation plays upon launching the game.
+    status: pending
+    depends_on:
+    - 100
+    children: []
+  - id: 103
+    description: Weapon Selection screen displays stats and descriptions of the 3
+      starting weapons.
+    status: pending
+    depends_on:
+    - 100
+    children: []
+  - id: 104
+    description: Result Screen correctly handles Game Over and Stage Clear states.
     status: pending
     depends_on:
     - 100
@@ -43,11 +57,112 @@ acceptance_criteria_tree:
   status: pending
   depends_on:
   - 200
-  children: []
+  children:
+  - id: 301
+    description: 'Python Weapon: Automatic firing of home-in shots targeting the nearest
+      bug monster.'
+    status: pending
+    depends_on:
+    - 300
+    children: []
+  - id: 302
+    description: 'C/C++ Weapon: Fast, straight line piercing projectile representing
+      direct debugging.'
+    status: pending
+    depends_on:
+    - 300
+    children: []
+  - id: 303
+    description: 'Java Weapon: Orbiting defensive shield rotating around the player
+      character.'
+    status: pending
+    depends_on:
+    - 300
+    children: []
+- id: 400
+  description: Enemy spawn waves and behavior models are active in the arena.
+  status: pending
+  depends_on:
+  - 200
+  children:
+  - id: 401
+    description: 'SyntaxError basic tracker: pursues player coordinates, inflicts
+      contact damage.'
+    status: pending
+    depends_on:
+    - 400
+    children: []
+  - id: 402
+    description: 'NullPointer fast tracker: high movement speed, low base health.'
+    status: pending
+    depends_on:
+    - 400
+    children: []
+  - id: 403
+    description: 'SegFault heavy tanker: slow movement speed, high health, high contact
+      damage.'
+    status: pending
+    depends_on:
+    - 400
+    children: []
+  - id: 404
+    description: 'HealBug fleeing support: flees from player, drops HP recovery item
+      on death.'
+    status: pending
+    depends_on:
+    - 400
+    children: []
+  - id: 405
+    description: 'Stage Event ''Indentation Panic'': triggers at 30s, spawns a deluge
+      of indentation bugs.'
+    status: pending
+    depends_on:
+    - 400
+    children: []
+- id: 500
+  description: Stage Clear Boss Event.
+  status: pending
+  depends_on:
+  - 200
+  children:
+  - id: 501
+    description: Rival Debug Boss 'Jang Seonhyeong' spawns precisely at 60 seconds
+      of survival.
+    status: pending
+    depends_on:
+    - 500
+    children: []
+  - id: 502
+    description: Defeating the Boss halts basic spawns and triggers Stage Clear transition.
+    status: pending
+    depends_on:
+    - 501
+    children: []
+- id: 600
+  description: Game HUD and retro diagnostics display.
+  status: pending
+  depends_on: []
+  children:
+  - id: 601
+    description: HUD panels track HP, game timer, kill count, current weapon, and
+      active event/boss status in terminal theme.
+    status: pending
+    depends_on:
+    - 600
+    children: []
+  - id: 602
+    description: CRT scanlines, glitch effects, and monospace fonts establish terminal
+      IDE aesthetic.
+    status: pending
+    depends_on:
+    - 600
+    children: []
 constraints:
 - Phaser 3 framework must be used for all scene management and rendering pipelines.
 - All graphics should use retro ASCII / terminal visual aesthetic styles.
 - Game must execute perfectly inside standard modern browsers without native installs.
+- 'No Placeholders: Core implementation contains no stub code, TODOs, comments containing
+  placeholder phrases, or empty ellipses (...).'
 architecture_decisions:
   AD-001:
     Title: Phaser 3 Game Engine Selection

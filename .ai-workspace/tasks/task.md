@@ -1,17 +1,16 @@
-# Task Checklist — Ouroboros Lite Evolve Phase (Phase 5)
+# Task Checklist — JDS Game Specification Construction (Phase 0)
 
-- [x] `ouroboros/evolution.py` 모듈 신규 구현
-  - [x] Mechanical (컴파일, 테스트 실패 로그) 및 Semantic (합의 요구사항 누락) 진화 대상 진단 분석기 구현
-  - [x] Stagnation (정체 역사) 데이터 기반 정체 위험 요소 추출
-  - [x] LLM 프로바이더 및 룰 기반 자동 패치 생성기 설계 (Constraint & Session Rule)
-  - [x] `ouroboros_seed.yaml` 제약 조건 자동 추가/수정 파서 작성
-  - [x] `AGENTS.md` 파일 `## Anti-Regression Rules` 섹션 자동 연장 연계 구현
-- [x] `ouroboros/cli.py` 인터페이스 통합
-  - [x] `@app.command() def evolve` 명령어 추가
-  - [x] `welcome` 가이드 온보딩 도움말 명령어 업데이트
-- [x] 단위 테스트 작성 및 무결성 검증
-  - [x] `tests/test_evolution.py` (또는 `tests/test_ouroboros.py` 통합) 작성
-  - [x] pytest 전체 테스트 통과 검증 (Windows 인코딩 대응 포함)
-- [x] 개발 완료 리포트 및 회고록 기록
-  - [x] `.ai-workspace/walkthroughs/walkthrough.md` 작성
-  - [x] devlog 생성 스킬을 활용하여 개발 경험 일지 기록
+- [x] Socratic Interview Simulator 스크립트 작성 (`.ai-workspace/scratch/run_interview.py`)
+  - [x] `InterviewEngine` 기반의 프로그래밍 방식으로 동작하도록 설계
+  - [x] `docs/00-reboot-start.md` 내용을 기반으로 소크라테스 인터뷰 질문에 대한 답변 제공
+  - [x] 모호성 점수(Ambiguity Score)를 0.2 이하로 낮추어 통과
+- [x] Ouroboros Seed Specification (`ouroboros_seed.yaml`) 생성 및 검증
+  - [x] `SeedSpec` 모델 형식에 부합하는 구조적 YAML로 변환 및 저장
+  - [x] 6대 핵심 컴포넌트(메뉴, 이동, 자동무기 3종, 적 4종, 스테이지 이벤트, 보스전)의 상세 수락 기준(Acceptance Criteria) 트리 구성
+  - [x] Phaser 3, 모노스페이스 터미널 네온 비주얼, 무설치 웹 브라우저 실행 등의 기술/스타일 제약 사항(Constraints) 바인딩
+  - [x] 아키텍처 결정 사항(Phaser 3 선택, 순수 시뮬레이터 분리 등) 정의
+- [x] Ouroboros Double Diamond Execution Plan (`ouroboros_plan.md`) 생성
+  - [x] `python run_ouroboros.py plan` 실행을 통해 Kahn의 위상 정렬이 적용된 L1~L2 병렬 실행 레벨 도출
+- [x] 명세 및 계획 무결성 검증
+  - [x] Ouroboros 단위 테스트 suite (`pytest tests/test_ouroboros.py`) 전체 통과 검증
+  - [x] 최종 결과물에 대한 Walkthrough 기록 (`.ai-workspace/walkthroughs/walkthrough.md`)

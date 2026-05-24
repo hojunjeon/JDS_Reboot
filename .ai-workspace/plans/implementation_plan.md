@@ -1,83 +1,69 @@
-# Implementation Plan — Ouroboros Lite Evolve Phase (Phase 5)
+# Phase 0: Socratic Requirements Specification for Jiyoon Debug Survival (JDS)
 
-This plan outlines the architecture, design, and implementation of **Phase 5: Evolve (Evolution)** in Ouroboros Lite. The goal is to build an automated, retroactive anti-regression engine that analyzes development failures, linter issues, test breaks, and stagnation patterns, and patches the system specifications to prevent these errors from reoccurring.
-
-## Goal
-Implement the `evolve` command in `ouroboros/cli.py` and the core logic in a new module `ouroboros/evolution.py`. This command will diagnose failures across all development stages (Mechanical, Semantic, Stagnation) and apply permanent patches to:
-1. `ouroboros_seed.yaml` under `constraints`
-2. `AGENTS.md` under a new `## Anti-Regression Rules` section
-
-This ensures that the AI coding assistant learns from past mistakes and never repeats them.
-
----
+Establish the core specification for the Jiyoon Debug Survival (JDS) game reboot by programmatically executing the Ouroboros Socratic Interview using `docs/00-reboot-start.md` as our source of truth.
 
 ## User Review Required
 
-> [!IMPORTANT]
-> **Key Architectural Decisions & User Benefits:**
-> - **Self-Patching Constraints:** Appending new constraints to `ouroboros_seed.yaml` guarantees that any future Double Diamond planning or AI execution will honor these new rules.
-> - **Session Rule Evolution (`AGENTS.md`):** Appending rules to `AGENTS.md` ensures subsequent Antigravity/AI coding sessions will read and follow the learned rules as part of Rule 6 (Handoff Protocol).
-> - **Robust Fallback:** If API keys are missing, the engine will use a robust template-based rules generator to format anti-regression rules based on standard error categorization.
+Documenting key structural constraints and architecture decisions that will shape the entire development cycle of the game reboot.
 
----
+> [!IMPORTANT]
+> **Aesthetic and Technology Binding Rules**
+> - **Engine**: Phaser 3 must be used for all 2D scene management, input, rendering, and collision handling.
+> - **Visuals**: Modern neon aesthetic combined with monospace terminal fonts, retro ASCII textures, subtle glitch effects, and CRT scanlines.
+> - **Language**: TypeScript/JavaScript for the web client application.
+> - **Architecture**: Game simulation logic must be stateless and isolated from Phaser rendering to guarantee unit-testable game loops.
+
+> [!WARNING]
+> **Ouroboros Lite Schema Reconcilation**
+> - `ouroboros/interview.py`'s `generate_seed` method produces a schema with `project`, `clarity_metrics`, `socratic_transcript`, and `specification` keys.
+> - However, `ouroboros/execution.py`'s `DoubleDiamondPlanner` and our test suites strictly expect the `SeedSpec` schema (`title`, `description`, `acceptance_criteria_tree`, `constraints`, `architecture_decisions`).
+> - **Our Solution**: We will generate an `ouroboros_seed.yaml` that perfectly satisfies the `SeedSpec` model to allow seamless execution of `python run_ouroboros.py plan`, but we will also embed the full Socratic transcript and metadata so that the complete Phase 0 Socratic interview history is fully preserved!
 
 ## Open Questions
 
 > [!NOTE]
-> None. The user has explicitly clarified that the `evolve` feature is not merely a bug-fix utility, but a system-wide patch to prevent regression.
-
----
+> **Design Decisions to Align on:**
+> 1. **Time-based vs Kill-based Boss Spawn**: The reboot document specifies "시간이 충분히 지나면 보스가 등장한다 (Stage 1의 경우 일정 생존 시간 후 등장)". We propose a strict time threshold of 60 seconds for Stage 1. Is this acceptable, or should we make it kill-dependent?
+> 2. **SSAFY References**: Should we maintain references to "SSAFY 교실 터미널" and "Jang Seonhyeong" (rival/debug boss), or generalize them to a generic developer school theme? (We recommend keeping them as they add great humor and flavor to the core fantasy).
+> 3. **Indentation Panic Event Duration**: We propose that the `Indentation Panic` stage event triggers at 30 seconds and lasts for 10 seconds, during which a high-density barrage of indentation bugs sweep across the screen.
 
 ## Proposed Changes
 
-### Component: Ouroboros Core Engine
+We will create a programmatic interview simulation script to invoke the actual Ouroboros interview logic, complete the rounds based on the reboot start document, and output a rich, fully populated specification.
 
 ---
 
-#### [NEW] [evolution.py](file:///C:/Users/user/Desktop/jdy_agy/ouroboros/evolution.py)
-Create the core evolution logic including diagnostic log parser, anti-regression patch generator, and target files patcher.
+### Ouroboros Specification Pipeline
 
-- **Class `EvolutionEngine`**:
-  - `diagnose_workspace()`: Scans mechanical results (compilation, pytest logs), semantic results (consensus failures), and history (stagnation) to isolate active failures.
-  - `generate_patches(failures)`: Calls LLM (or falls back to a categorized rule generator) to create:
-    - A new system-level constraint.
-    - A new binding session rule.
-  - `apply_patches(constraint, rule)`:
-    - Deserializes `ouroboros_seed.yaml`, appends the constraint to `constraints`, and serializes it back.
-    - Parses `AGENTS.md`, appends the anti-regression rule under the `## Anti-Regression Rules` section, and writes it back.
-  - `generate_report(constraint, rule)`: Renders a comprehensive markdown summary of the evolution.
+#### [NEW] [run_interview.py](file:///C:/Users/user/Desktop/jdy_agy/.ai-workspace/scratch/run_interview.py)
+A gitignored scratch script that:
+1. Instantiates `InterviewEngine` and `InterviewState` from `ouroboros.interview`.
+2. Programmatically answers Socratic questions from all 5 perspectives (Researcher, Simplifier, Architect, Breadth-keeper, Seed-closer) using content from `docs/00-reboot-start.md`.
+3. Validates the resulting clarity scores and ambiguity ratings.
+4. Generates a robust `ouroboros_seed.yaml` that is fully compliant with `SeedSpec` for Phase 1 planning.
 
----
-
-#### [MODIFY] [cli.py](file:///C:/Users/user/Desktop/jdy_agy/ouroboros/cli.py)
-Add the `@app.command() def evolve(...)` command to the Typer CLI and integrate it into the `welcome` guide.
-
-- Add the `evolve` command to load evaluation reports or auto-discover workspace errors, execute `EvolutionEngine`, apply patches, and display a Rich-formatted panel summarizing the evolution.
-- Update `welcome()` command to display the `evolve` command in the onboarding help guide.
-
----
-
-#### [MODIFY] [test_ouroboros.py](file:///C:/Users/user/Desktop/jdy_agy/tests/test_ouroboros.py)
-Add 3 unit tests verifying:
-1. `test_evolution_diagnostics()`: Diagnosis of synthetic compilation and pytest failures.
-2. `test_evolution_patching()`: Successful yaml and AGENTS.md file updates.
-3. `test_evolution_cli_integration()`: Typer CLI invocation of the `evolve` command.
-
----
+#### [MODIFY] [ouroboros_seed.yaml](file:///C:/Users/user/Desktop/jdy_agy/ouroboros_seed.yaml)
+Crystallize the complete game requirements into the final seed specification:
+- Title: Jiyoon Debug Survival (JDS)
+- Detailed `acceptance_criteria_tree` mapping the 6 core components (Menus, Movement, Weapons, Enemies, Boss, HUD).
+- Exact technological and styling constraints.
+- Formal architectural decisions (Phaser 3 selection, isolated simulation logic).
 
 ## Verification Plan
 
 ### Automated Tests
-Run the pytest suite to verify that all existing tests and new evolution tests pass 100%:
-```powershell
-python setup.py
-pytest tests/test_ouroboros.py -v
-```
+- Run our custom script to verify the interview completes successfully:
+  ```bash
+  python .ai-workspace/scratch/run_interview.py
+  ```
+- Run Ouroboros tests to verify seed spec compatibility:
+  ```bash
+  python -m pytest tests/test_ouroboros.py
+  ```
+- Run the Ouroboros planner to verify successful plan generation:
+  ```bash
+  python run_ouroboros.py plan
+  ```
 
 ### Manual Verification
-1. Intentionally introduce a syntax error in a dummy file or fail a semantic requirement.
-2. Run `python run_ouroboros.py evaluate`.
-3. Run `python run_ouroboros.py evolve`.
-4. Verify that:
-   - `ouroboros_seed.yaml` constraints list has been updated.
-   - `AGENTS.md` has a new section for anti-regression rules containing the prevention patch.
+- Review the generated `ouroboros_seed.yaml` and `ouroboros_plan.md` to ensure they map 100% of the game requirements in `docs/00-reboot-start.md` without any placeholder descriptions.
