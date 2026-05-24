@@ -11,6 +11,7 @@ All AI agents (Antigravity CLI, Claude, Gemini, Codex, etc.) MUST read and follo
 ```
 C:\Users\user\Desktop\jdy_agy\
 ```
+*(On other machines, this maps to the cloned project folder root.)*
 
 **NEVER store project files in user-specific or machine-specific paths such as:**
 - `C:\Users\user\.gemini\...`
@@ -74,7 +75,29 @@ python run_ouroboros.py status      # Phase 3: Stagnation detection + Persona ad
 
 ---
 
-## RULE 5: Session Handoff Protocol
+## RULE 5: Multi-Machine Portability and Setup
+
+To run this workspace on **any computer** identically, always use the automated setup utility:
+```bash
+python setup.py
+```
+This utility automatically:
+1. Verifies Python 3.8+ compatibility.
+2. Initializes a local isolated virtual environment (`.venv`).
+3. Installs requirements from `requirements.txt`.
+4. Creates a local `.env` configuration file from `.env.example` if missing.
+5. Sets executable permissions on local shell aliases.
+6. Runs and verifies the complete `pytest` test suite.
+
+### Local Shell Alias Execution
+Never rely on machine-specific global profiles for commands. Use the provided local cross-platform scripts:
+- **Windows CMD**: `agyd.bat [args]`
+- **Windows PowerShell**: `.\agyd.ps1 [args]`
+- **Bash / Linux / macOS**: `./agyd [args]`
+
+---
+
+## RULE 6: Session Handoff Protocol
 
 When starting a new session, the agent MUST:
 1. Read this `AGENTS.md` file first
@@ -85,7 +108,7 @@ When starting a new session, the agent MUST:
 
 ---
 
-## RULE 6: Git Hygiene
+## RULE 7: Git Hygiene
 
 - All code changes must be committed with meaningful messages
 - Never commit `.env` files (only `.env.example`)
@@ -101,6 +124,11 @@ jdy_agy/
 ├── AGENTS.md                   ← THIS FILE (read first every session)
 ├── requirements.txt            ← Python dependencies
 ├── run_ouroboros.py            ← CLI entrypoint
+├── setup.py                    ← Automated environment & test bootstrap utility [NEW]
+├── .env.example                ← Environment template [NEW]
+├── agyd                        ← Bash local shortcut [NEW]
+├── agyd.bat                    ← CMD local shortcut [NEW]
+├── agyd.ps1                    ← PowerShell local shortcut [NEW]
 ├── ouroboros_seed.yaml         ← Active specification (auto-generated)
 ├── ouroboros_plan.md           ← Active execution plan (auto-generated)
 ├── ouroboros/                  ← Ouroboros Lite core package
@@ -121,3 +149,8 @@ jdy_agy/
 │   └── scratch/                ← gitignored
 └── docs/                       ← Human-readable documentation
 ```
+
+## Anti-Regression Rules
+
+- **Anti-Regression Patch [2026-05-25 00:15:23]**: RULE: Run black or stylistic linters to verify zero format warnings before saving changes. *(Reason: Guarantees aesthetic clean code structure by enforcing linter compliance.)*
+- **Anti-Regression Patch [2026-05-25 00:15:23]**: RULE: Prioritize complete functional verification of requirement 'No Placeholders' by mapping appropriate test units and checking compliance. *(Reason: Upgrades requirement 'No Placeholders' to a permanent system-wide constraint, forcing subsequent iterations to implement it.)*
