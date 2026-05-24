@@ -1,0 +1,103 @@
+/* Jiyoon Debug Survival (JDS) — Retro Monospace Terminal Stylesheets */
+
+:root {
+    --bg-core: hsl(0, 0%, 3%);
+    --terminal-green: hsl(120, 100%, 48%);
+    --terminal-amber: hsl(35, 100%, 50%);
+    --alert-red: hsl(0, 100%, 50%);
+    --text-white: hsl(0, 0%, 90%);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #030303;
+    color: var(--terminal-green);
+    font-family: 'Courier New', Courier, Consolas, 'Fira Code', monospace;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    image-rendering: pixelated;
+}
+
+/* Retro Monitor Bezel Wrapper */
+#game-container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    background-color: var(--bg-core);
+    border: 6px double var(--terminal-green);
+    box-shadow: 
+        0 0 30px rgba(0, 245, 0, 0.25),
+        inset 0 0 15px rgba(0, 245, 0, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Target element where Phaser mounts its canvas */
+#game-viewport {
+    width: 800px;
+    height: 600px;
+}
+
+/* Static Repeating Scanlines Overlay */
+.scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.32) 50%
+    );
+    background-size: 100% 4px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Phosphor Screen Edge Vignette and Glow */
+.screen-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 60px rgba(0, 245, 0, 0.12);
+    z-index: 999;
+    pointer-events: none;
+}
+
+/* CRT Screen Subtle Refresh Flicker */
+@keyframes crt-flicker {
+    0% { opacity: 0.995; }
+    50% { opacity: 0.985; }
+    100% { opacity: 0.995; }
+}
+
+.crt-effect {
+    animation: crt-flicker 0.2s infinite;
+}
+
+/* Custom terminal prompt styling elements */
+.input-cursor {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background-color: var(--terminal-green);
+    animation: cursor-blink 0.8s steps(2, start) infinite;
+}
+
+@keyframes cursor-blink {
+    to { visibility: hidden; }
+}
