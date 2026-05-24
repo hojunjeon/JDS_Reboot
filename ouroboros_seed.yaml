@@ -1,0 +1,61 @@
+title: Jiyoon Debug Survival
+description: A 2D wave survival action game set in a corrupted IDE where programming
+  bugs are monsters.
+acceptance_criteria_tree:
+- id: 100
+  description: The game starts from a Monospace/Terminal styled menu scene.
+  status: pending
+  depends_on: []
+  children:
+  - id: 101
+    description: Menu provides 'Start Game' and 'Stage Selection' command inputs.
+    status: pending
+    depends_on:
+    - 100
+    children: []
+  - id: 102
+    description: Terminal boot-up sequence animation plays upon launching.
+    status: pending
+    depends_on:
+    - 100
+    children: []
+- id: 200
+  description: The active play field is controlled by keyboard controls.
+  status: pending
+  depends_on: []
+  children:
+  - id: 201
+    description: Arrow keys and WASD shift the player character continuously in 2D
+      space.
+    status: pending
+    depends_on:
+    - 200
+    children: []
+  - id: 202
+    description: Collision boundaries prevent the player from moving outside the terminal
+      window canvas.
+    status: pending
+    depends_on:
+    - 200
+    children: []
+- id: 300
+  description: Weapons execute auto-fire cycles targeting local bug monsters.
+  status: pending
+  depends_on:
+  - 200
+  children: []
+constraints:
+- Phaser 3 framework must be used for all scene management and rendering pipelines.
+- All graphics should use retro ASCII / terminal visual aesthetic styles.
+- Game must execute perfectly inside standard modern browsers without native installs.
+architecture_decisions:
+  AD-001:
+    Title: Phaser 3 Game Engine Selection
+    Status: Accepted
+    Rationale: Phaser 3 provides robust rendering speed and high-level 2D abstraction
+      ideal for WebGL/Canvas deployment.
+  AD-002:
+    Title: Stateless Simulator Isolation
+    Status: Accepted
+    Rationale: Separating state ticking from Phaser rendering cycles ensures that
+      pure simulation code is easily unit-tested.
