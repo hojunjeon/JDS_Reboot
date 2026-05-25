@@ -71,7 +71,7 @@ export class MenuScene extends Phaser.Scene {
 
     create(): void {
         // Draw double-border top title decoration
-        const borderLines = "==========================================================";
+        const borderLines = "================================================================";
         
         this.add.text(50, 45, [
             borderLines,
@@ -83,6 +83,31 @@ export class MenuScene extends Phaser.Scene {
             color: '#00f500', // Neon green
             lineSpacing: 6
         });
+
+        // Draw Player Avatar Frame & Image (Locked alternative 3 player avatar)
+        const avatarFrame = this.add.graphics();
+        // Outer border
+        avatarFrame.lineStyle(2, 0x00f500, 0.8);
+        avatarFrame.strokeRect(600, 140, 120, 120);
+        // Inner border
+        avatarFrame.lineStyle(1, 0x00b300, 0.4);
+        avatarFrame.strokeRect(596, 136, 128, 128);
+
+        // Add Avatar image
+        const avatarImage = this.add.image(660, 200, 'player_alt3');
+        avatarImage.setDisplaySize(100, 100);
+
+        // Avatar Caption text
+        this.add.text(660, 275, [
+            "AVATAR: LOCK_3",
+            "NEON HACKER CAT"
+        ].join('\n'), {
+            fontFamily: 'Courier New, Courier, Consolas, monospace',
+            fontSize: '11px',
+            color: '#00f500',
+            align: 'center',
+            lineSpacing: 4
+        }).setOrigin(0.5, 0);
 
         // Config row displays
         this.stageRowText = this.add.text(50, 160, '', {

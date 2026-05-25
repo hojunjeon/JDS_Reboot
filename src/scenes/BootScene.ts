@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 
 /**
  * BootScene: Terminal BIOS startup self-test & boot animation scene.
- * Simulates sequential hardware checks and warning notifications in green monospace logs.
+ * Simulates sequential hardware checks and warning notifications in green monospace logs,
+ * while preloading locked assets (player_alt3 and bg_alt1) in the background.
  */
 export class BootScene extends Phaser.Scene {
     private bootLogs: string[] = [
@@ -10,6 +11,8 @@ export class BootScene extends Phaser.Scene {
         "CPU: JIYOON CORE DUO @ 3.33GHz",
         "RAM: 640KB SYSTEM CONVENTIONAL MEMORY",
         "VERIFYING SECTOR 0x00F8... SUCCESS",
+        "LOADING VIRTUAL ROM: assets/bg_alt1.png... SUCCESS",
+        "LOADING PLAYER DRONE RESOURCE: assets/player_alt3.png... SUCCESS",
         "INITIALIZING COMPILER PARSER LIBRARIES... SUCCESS",
         "COMPILING STACK OVERFLOW SANITIZERS... SUCCESS",
         "[WARNING] CRITICAL CORRUPTION FOUND IN DIRECTORY: /src/sandbox/",
@@ -26,6 +29,11 @@ export class BootScene extends Phaser.Scene {
 
     constructor() {
         super({ key: 'BootScene' });
+    }
+
+    preload(): void {
+        this.load.image('bg_alt1', 'assets/bg_alt1.png');
+        this.load.image('player_alt3', 'assets/player_alt3.png');
     }
 
     create(): void {
@@ -61,7 +69,7 @@ export class BootScene extends Phaser.Scene {
             this.refreshConsoleContent();
 
             // Random delay to match realistic BIOS load speeds
-            const randomizedDelay = Phaser.Math.Between(100, 240);
+            const randomizedDelay = Phaser.Math.Between(80, 180);
             this.time.delayedCall(randomizedDelay, () => this.renderNextLog());
         } else {
             // Listen for any key down event to trigger ide boot transitions
