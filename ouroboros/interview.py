@@ -24,10 +24,14 @@ from rich.prompt import Prompt, Confirm
 # Pydantic Models for State Management
 # -----------------------------------------------------------------------------
 
+
 class InterviewRound(BaseModel):
     """Represents a single round of the Socratic interview."""
+
     round_number: int
-    perspective: Literal["Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"]
+    perspective: Literal[
+        "Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"
+    ]
     question: str
     user_response: Optional[str] = None
     ambiguity_score: Optional[float] = None
@@ -36,6 +40,7 @@ class InterviewRound(BaseModel):
 
 class InterviewState(BaseModel):
     """Maintains the full interview session state and metrics."""
+
     project_name: str
     project_type: Literal["greenfield", "brownfield"] = "greenfield"
     initial_prompt: str
@@ -61,38 +66,39 @@ QUESTION_TEMPLATES: Dict[str, List[str]] = {
         "Let's dig into the background of {project_name}. What is the primary problem we are trying to solve, and are there existing solutions or tools we should consider as models?",
         "For {project_name}, could you clarify any technical assumptions? Are there specific libraries, protocols, or frameworks you assume are best suited for this task?",
         "What domain-specific concepts or rules in {project_name} should we research and clarify before writing code?",
-        "What is the historical background or business driver behind {project_name}? Who is the primary target audience or user?"
+        "What is the historical background or business driver behind {project_name}? Who is the primary target audience or user?",
     ],
     "Simplifier": [
         "From a Simplifier's view: What is the absolute core MVP (Minimum Viable Product) of {project_name}? If we had to cut 50% of the scope, what remains?",
         "To avoid over-engineering {project_name}, can we simplify any of the features you mentioned? What is the simplest possible path to get a working prototype?",
         "What parts of {project_name} are nice-to-have rather than must-have? Let's explicitly defer or eliminate them for now.",
-        "If you had to describe the core workflow of {project_name} in one sentence, what is it, and how can we keep it as simple as possible?"
+        "If you had to describe the core workflow of {project_name} in one sentence, what is it, and how can we keep it as simple as possible?",
     ],
     "Architect": [
         "Let's look at the structure of {project_name}. What are the main components (e.g., CLI, database, API, modules) and how do they communicate?",
         "For {project_name}, what are the external interface requirements? Do we need to expose APIs, write files, or integrate with other systems?",
         "How do you envision the data flow within {project_name}? What are the primary data structures or inputs/outputs we are working with?",
-        "What are the structural constraints of {project_name}? For example, does it need to run as a single script, a package, or a docker container?"
+        "What are the structural constraints of {project_name}? For example, does it need to run as a single script, a package, or a docker container?",
     ],
     "Breadth-keeper": [
         "As the Breadth-keeper: What are the edge cases for {project_name}? How should we handle bad inputs, network failures, or missing files?",
         "What are the performance, scaling, or security requirements for {project_name}? Are there constraints on memory, speed, or user authorization?",
         "How should we verify the correctness of {project_name}? Do we need a test suite, logging, or runtime assertions?",
-        "Are there any concurrent, multi-threaded, or async requirements for {project_name} we should prepare for?"
+        "Are there any concurrent, multi-threaded, or async requirements for {project_name} we should prepare for?",
     ],
     "Seed-closer": [
         "As the Seed-closer: Let's summarize what we have so far. The core goal of {project_name} is established. What is the single most critical acceptance criteria (AC) to prove we succeeded?",
         "To wrap up the specification, what are the absolute 'must-nots' or negative constraints for {project_name} (things the system must NOT do)?",
         "Let's lock down the scope. Are there any final, specific rules or details you want to add before we generate the system specification?",
-        "Are you completely satisfied with the boundaries we've defined, or is there any remaining grey area we need to resolve?"
-    ]
+        "Are you completely satisfied with the boundaries we've defined, or is there any remaining grey area we need to resolve?",
+    ],
 }
 
 
 # -----------------------------------------------------------------------------
 # Interview Engine
 # -----------------------------------------------------------------------------
+
 
 class InterviewEngine:
     """
@@ -101,10 +107,14 @@ class InterviewEngine:
     Supports OpenAI-compatible LLM APIs and provides a robust rule-based fallback.
     """
 
-    def __init__(self, state: Optional[InterviewState] = None, console: Optional[Console] = None):
+    def __init__(
+        self, state: Optional[InterviewState] = None, console: Optional[Console] = None
+    ):
         self.state = state or InterviewState(project_name="", initial_prompt="")
         self.console = console or Console()
-        self.active_perspective: Literal["Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"] = "Researcher"
+        self.active_perspective: Literal[
+            "Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"
+        ] = "Researcher"
         self.active_question: str = ""
 
     def calculate_ambiguity(self) -> float:
@@ -128,7 +138,9 @@ class InterviewEngine:
         self.state.current_ambiguity = max(0.0, min(1.0, ambiguity))
         return self.state.current_ambiguity
 
-    def evaluate_clarity_fallback(self, response: str, current_perspective: str) -> Dict[str, float]:
+    def evaluate_clarity_fallback(
+        self, response: str, current_perspective: str
+    ) -> Dict[str, float]:
         """
         Rule-based clarity calculation when no LLM key is configured.
         Increases dimension clarity based on length, keywords/descriptors, and active perspective.
@@ -149,15 +161,71 @@ class InterviewEngine:
             scores[k] = min(1.0, scores[k] + length_bonus)
 
         # 2. Key descriptor checking (increase clarity by 0.15 for match categories)
-        goal_words = ["goal", "aim", "purpose", "want to", "build", "create", "solve", "deliver", "mvp", "core", "focus", "intent", "primary", "objective"]
-        constraint_words = ["must", "prevent", "limit", "restrict", "cannot", "rules", "require", "bound", "platform", "version", "dependency", "constraint", "limitations"]
-        success_words = ["verify", "ac", "acceptance criteria", "test", "benchmark", "metric", "success", "done", "complete", "assert", "check", "criteria", "validation"]
-        context_words = ["context", "legacy", "exist", "current", "integrate", "database", "api", "system", "brownfield", "previous", "background", "history"]
+        goal_words = [
+            "goal",
+            "aim",
+            "purpose",
+            "want to",
+            "build",
+            "create",
+            "solve",
+            "deliver",
+            "mvp",
+            "core",
+            "focus",
+            "intent",
+            "primary",
+            "objective",
+        ]
+        constraint_words = [
+            "must",
+            "prevent",
+            "limit",
+            "restrict",
+            "cannot",
+            "rules",
+            "require",
+            "bound",
+            "platform",
+            "version",
+            "dependency",
+            "constraint",
+            "limitations",
+        ]
+        success_words = [
+            "verify",
+            "ac",
+            "acceptance criteria",
+            "test",
+            "benchmark",
+            "metric",
+            "success",
+            "done",
+            "complete",
+            "assert",
+            "check",
+            "criteria",
+            "validation",
+        ]
+        context_words = [
+            "context",
+            "legacy",
+            "exist",
+            "current",
+            "integrate",
+            "database",
+            "api",
+            "system",
+            "brownfield",
+            "previous",
+            "background",
+            "history",
+        ]
 
         def check_matches(text: str, keywords: list) -> int:
             matches = 0
             for kw in keywords:
-                pattern = r'\b' + re.escape(kw) + r'\b'
+                pattern = r"\b" + re.escape(kw) + r"\b"
                 if re.search(pattern, text, re.IGNORECASE):
                     matches += 1
             return matches
@@ -171,11 +239,17 @@ class InterviewEngine:
         if goal_matches > 0:
             scores["goal"] = min(1.0, scores["goal"] + 0.15 + (goal_matches - 1) * 0.02)
         if constraint_matches > 0:
-            scores["constraint"] = min(1.0, scores["constraint"] + 0.15 + (constraint_matches - 1) * 0.02)
+            scores["constraint"] = min(
+                1.0, scores["constraint"] + 0.15 + (constraint_matches - 1) * 0.02
+            )
         if success_matches > 0:
-            scores["success_criteria"] = min(1.0, scores["success_criteria"] + 0.15 + (success_matches - 1) * 0.02)
+            scores["success_criteria"] = min(
+                1.0, scores["success_criteria"] + 0.15 + (success_matches - 1) * 0.02
+            )
         if context_matches > 0:
-            scores["context"] = min(1.0, scores["context"] + 0.15 + (context_matches - 1) * 0.02)
+            scores["context"] = min(
+                1.0, scores["context"] + 0.15 + (context_matches - 1) * 0.02
+            )
 
         # 3. Perspective Focus Boost (the targeted dimension gets a 0.10 boost)
         p_boost = 0.10
@@ -194,7 +268,9 @@ class InterviewEngine:
 
         # Clamping and monotonicity (clarity should not regress)
         for k in scores:
-            scores[k] = max(self.state.dimension_clarity.get(k, 0.1), min(1.0, scores[k]))
+            scores[k] = max(
+                self.state.dimension_clarity.get(k, 0.1), min(1.0, scores[k])
+            )
 
         return scores
 
@@ -206,8 +282,10 @@ class InterviewEngine:
         if not api_key:
             return None
 
-        api_base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1/chat/completions")
-        
+        api_base = os.environ.get(
+            "OPENAI_API_BASE", "https://api.openai.com/v1/chat/completions"
+        )
+
         system_prompt = (
             "You are Ouroboros Socratic Interviewer, a world-class requirements analyst.\n"
             "Your task is to analyze the requirements of a software project through Socratic questioning.\n"
@@ -266,10 +344,10 @@ class InterviewEngine:
             "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
+                {"role": "user", "content": user_content},
             ],
             "response_format": {"type": "json_object"},
-            "temperature": 0.2
+            "temperature": 0.2,
         }
 
         try:
@@ -278,31 +356,42 @@ class InterviewEngine:
                 data=json.dumps(payload).encode("utf-8"),
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {api_key}"
+                    "Authorization": f"Bearer {api_key}",
                 },
-                method="POST"
+                method="POST",
             )
             with urllib.request.urlopen(req, timeout=12) as res:
                 res_data = json.loads(res.read().decode("utf-8"))
                 content = res_data["choices"][0]["message"]["content"]
                 data = json.loads(content)
-                
+
                 scores = data.get("dimension_scores", {})
                 for key in ["goal", "constraint", "success_criteria", "context"]:
                     if key not in scores:
                         scores[key] = self.state.dimension_clarity.get(key, 0.1)
 
                 next_perspective = data.get("next_perspective", "Researcher")
-                next_question = data.get("next_question", "Could you clarify the next step?")
+                next_question = data.get(
+                    "next_question", "Could you clarify the next step?"
+                )
                 completed = data.get("completed", False)
-                
+
                 return scores, next_perspective, next_question, completed
         except Exception as e:
             if os.environ.get("OUROBOROS_DEBUG"):
-                self.console.print(f"[yellow]LLM integration failed: {str(e)}. Seamlessly falling back.[/yellow]")
+                self.console.print(
+                    f"[yellow]LLM integration failed: {str(e)}. Seamlessly falling back.[/yellow]"
+                )
             return None
 
-    def get_next_question_and_perspective(self) -> Tuple[str, Literal["Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"]]:
+    def get_next_question_and_perspective(
+        self,
+    ) -> Tuple[
+        str,
+        Literal[
+            "Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"
+        ],
+    ]:
         """Determines the next perspective and question using a rule-based fallback model."""
         dims = ["goal", "constraint", "success_criteria"]
         if self.state.project_type == "brownfield":
@@ -315,22 +404,37 @@ class InterviewEngine:
                 break
 
         if all_clear:
-            perspective: Literal["Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"] = "Seed-closer"
+            perspective: Literal[
+                "Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"
+            ] = "Seed-closer"
         else:
             # Find the lowest scoring dimension
-            sorted_dims = sorted(dims, key=lambda d: self.state.dimension_clarity.get(d, 0.0))
+            sorted_dims = sorted(
+                dims, key=lambda d: self.state.dimension_clarity.get(d, 0.0)
+            )
             lowest_dim = sorted_dims[0]
-            
-            mapping: Dict[str, Literal["Researcher", "Simplifier", "Architect", "Breadth-keeper", "Seed-closer"]] = {
+
+            mapping: Dict[
+                str,
+                Literal[
+                    "Researcher",
+                    "Simplifier",
+                    "Architect",
+                    "Breadth-keeper",
+                    "Seed-closer",
+                ],
+            ] = {
                 "goal": "Simplifier",
                 "constraint": "Architect",
                 "success_criteria": "Breadth-keeper",
-                "context": "Researcher"
+                "context": "Researcher",
             }
             perspective = mapping.get(lowest_dim, "Researcher")
 
         asked_questions = {r.question for r in self.state.rounds}
-        templates = QUESTION_TEMPLATES.get(perspective, ["Could you expand on this topic?"])
+        templates = QUESTION_TEMPLATES.get(
+            perspective, ["Could you expand on this topic?"]
+        )
 
         selected_question = ""
         for t in templates:
@@ -353,7 +457,7 @@ class InterviewEngine:
             res = self._evaluate_round_llm(
                 response=self.state.initial_prompt,
                 question="Initial Prompt Analysis",
-                perspective="Researcher"
+                perspective="Researcher",
             )
             if res:
                 scores, next_p, next_q, comp = res
@@ -372,7 +476,10 @@ class InterviewEngine:
 
         if self.state.current_ambiguity <= 0.2:
             self.state.completed = True
-            return "Requirements are already exceptionally clear! No further questioning needed.", "Seed-closer"
+            return (
+                "Requirements are already exceptionally clear! No further questioning needed.",
+                "Seed-closer",
+            )
 
         next_q, next_p = self.get_next_question_and_perspective()
         self.active_perspective = next_p
@@ -382,7 +489,7 @@ class InterviewEngine:
     def submit_response(self, user_response: str) -> float:
         """Processes the user response, updates clarity levels, and queues the next round."""
         round_idx = len(self.state.rounds) + 1
-        
+
         # Save round data
         current_round = InterviewRound(
             round_number=round_idx,
@@ -390,7 +497,7 @@ class InterviewEngine:
             question=self.active_question,
             user_response=user_response,
             ambiguity_score=1.0,
-            dimension_scores={}
+            dimension_scores={},
         )
 
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -400,27 +507,29 @@ class InterviewEngine:
             res = self._evaluate_round_llm(
                 response=user_response,
                 question=self.active_question,
-                perspective=self.active_perspective
+                perspective=self.active_perspective,
             )
             if res:
                 scores, next_p, next_q, comp = res
                 self.state.dimension_clarity = scores
                 self.calculate_ambiguity()
-                
+
                 current_round.dimension_scores = dict(scores)
                 current_round.ambiguity_score = self.state.current_ambiguity
                 self.state.rounds.append(current_round)
 
                 self.active_perspective = next_p
                 self.active_question = next_q
-                
+
                 if comp or self.state.current_ambiguity <= 0.2:
                     self.state.completed = True
                 llm_success = True
 
         if not llm_success:
             # Rule-based fallback
-            scores = self.evaluate_clarity_fallback(user_response, self.active_perspective)
+            scores = self.evaluate_clarity_fallback(
+                user_response, self.active_perspective
+            )
             self.state.dimension_clarity = scores
             self.calculate_ambiguity()
 
@@ -469,7 +578,7 @@ class InterviewEngine:
                 "ambiguity_score": round(self.state.current_ambiguity, 4),
                 "dimension_clarity": {
                     k: round(v, 4) for k, v in self.state.dimension_clarity.items()
-                }
+                },
             },
             "socratic_transcript": [
                 {
@@ -477,7 +586,7 @@ class InterviewEngine:
                     "perspective": r.perspective,
                     "question": r.question,
                     "response": r.user_response,
-                    "ambiguity_after": round(r.ambiguity_score or 1.0, 4)
+                    "ambiguity_after": round(r.ambiguity_score or 1.0, 4),
                 }
                 for r in self.state.rounds
             ],
@@ -485,11 +594,15 @@ class InterviewEngine:
                 "core_goals": goals,
                 "constraints": constraints,
                 "acceptance_criteria": success_criteria,
-                "architectural_context": contexts if self.state.project_type == "brownfield" else []
-            }
+                "architectural_context": (
+                    contexts if self.state.project_type == "brownfield" else []
+                ),
+            },
         }
 
-        yaml_content = yaml.safe_dump(seed_data, sort_keys=False, default_flow_style=False)
+        yaml_content = yaml.safe_dump(
+            seed_data, sort_keys=False, default_flow_style=False
+        )
 
         if not filepath:
             filename = f"{self.state.project_name.lower().replace(' ', '_')}_seed.yaml"
@@ -509,20 +622,20 @@ class InterviewEngine:
         empty = width - filled
         bar = "█" * filled + "░" * empty
         percent = int(score * 100)
-        
+
         if score >= 0.8:
             color = "green"
         elif score >= 0.5:
             color = "yellow"
         else:
             color = "red"
-            
+
         return f"[{color}]{bar}[/{color}] {percent}%"
 
     def _render_dashboard(self) -> None:
         """Prints a comprehensive progress report in the terminal."""
         self.console.clear()
-        
+
         # Color ambiguity score based on value
         amb = self.state.current_ambiguity
         if amb <= 0.2:
@@ -541,7 +654,7 @@ class InterviewEngine:
             f"  Constraint Clarity: {self._make_progress_bar(self.state.dimension_clarity.get('constraint', 0.0))}",
             f"  Success Criteria:   {self._make_progress_bar(self.state.dimension_clarity.get('success_criteria', 0.0))}",
         ]
-        
+
         if self.state.project_type == "brownfield":
             dashboard_lines.append(
                 f"  Context Clarity:    {self._make_progress_bar(self.state.dimension_clarity.get('context', 0.0))}"
@@ -551,32 +664,43 @@ class InterviewEngine:
                 f"  Context Clarity:    {self._make_progress_bar(self.state.dimension_clarity.get('context', 0.0))} (Ignored for Greenfield)"
             )
 
-        self.console.print(Panel(
-            "\n".join(dashboard_lines),
-            title="[bold magenta]Ouroboros Requirements Dashboard[/bold magenta]",
-            border_style="magenta",
-            expand=False
-        ))
+        self.console.print(
+            Panel(
+                "\n".join(dashboard_lines),
+                title="[bold magenta]Ouroboros Requirements Dashboard[/bold magenta]",
+                border_style="magenta",
+                expand=False,
+            )
+        )
 
     def run_interactive(self) -> None:
         """Initiates and runs the full Socratic interactive loop in the terminal."""
-        self.console.print(Panel(
-            Text("Welcome to the Ouroboros Socratic Interview Engine!\n"
-                 "Phase 0: Socratic Clarification & Requirements Gathering", 
-                 style="bold magenta", justify="center"),
-            subtitle="ouroboros-lite v0.1.0",
-            border_style="magenta"
-        ))
+        self.console.print(
+            Panel(
+                Text(
+                    "Welcome to the Ouroboros Socratic Interview Engine!\n"
+                    "Phase 0: Socratic Clarification & Requirements Gathering",
+                    style="bold magenta",
+                    justify="center",
+                ),
+                subtitle="ouroboros-lite v0.1.0",
+                border_style="magenta",
+            )
+        )
 
         # Check state variables and prompt if missing
         if not self.state.project_name:
-            project_name = Prompt.ask("[bold cyan]Enter Project Name[/bold cyan]", default="My AI Project")
+            project_name = Prompt.ask(
+                "[bold cyan]Enter Project Name[/bold cyan]", default="My AI Project"
+            )
             project_type = Prompt.ask(
                 "[bold cyan]Enter Project Type[/bold cyan]",
                 choices=["greenfield", "brownfield"],
-                default="greenfield"
+                default="greenfield",
             )
-            initial_prompt = Prompt.ask("[bold cyan]Enter your Initial Prompt / Product Vision[/bold cyan]")
+            initial_prompt = Prompt.ask(
+                "[bold cyan]Enter your Initial Prompt / Product Vision[/bold cyan]"
+            )
 
             self.state.project_name = project_name
             self.state.project_type = project_type
@@ -591,14 +715,20 @@ class InterviewEngine:
             self.console.print(f"\n[bold magenta][{p} Perspective][/bold magenta]")
             self.console.print(f"[bold white]{q}[/bold white]\n")
 
-            user_resp = Prompt.ask("[bold green]Your Response[/bold green] (type /exit to quit, /skip to bypass)")
+            user_resp = Prompt.ask(
+                "[bold green]Your Response[/bold green] (type /exit to quit, /skip to bypass)"
+            )
 
             if user_resp.strip().lower() in ["/exit", "/quit"]:
-                self.console.print("[yellow]Interview exited by user. Saving current session state...[/yellow]")
+                self.console.print(
+                    "[yellow]Interview exited by user. Saving current session state...[/yellow]"
+                )
                 break
 
             if user_resp.strip().lower() == "/skip":
-                self.console.print("[dim]Skipping round, continuing Socratic flow...[/dim]")
+                self.console.print(
+                    "[dim]Skipping round, continuing Socratic flow...[/dim]"
+                )
                 user_resp = "Skipped by user. Proceed with general clarification."
 
             # Update scores & ambiguity
@@ -611,17 +741,29 @@ class InterviewEngine:
         # Completion handling
         if self.state.completed:
             self._render_dashboard()
-            self.console.print(Panel(
-                Text("🎉 Target Ambiguity Reached (<= 0.20)! Requirements are exceptionally clear. 🎉", 
-                     style="bold green", justify="center"),
-                border_style="green"
-            ))
+            self.console.print(
+                Panel(
+                    Text(
+                        "🎉 Target Ambiguity Reached (<= 0.20)! Requirements are exceptionally clear. 🎉",
+                        style="bold green",
+                        justify="center",
+                    ),
+                    border_style="green",
+                )
+            )
 
-            should_gen = Confirm.ask("[bold cyan]Would you like to generate the Ouroboros Seed Specification now?[/bold cyan]", default=True)
+            should_gen = Confirm.ask(
+                "[bold cyan]Would you like to generate the Ouroboros Seed Specification now?[/bold cyan]",
+                default=True,
+            )
             if should_gen:
                 filepath = self.generate_seed()
-                self.console.print(f"\n[bold green]Success![/bold green] Seed specification written to:\n[underline]{filepath}[/underline]")
-                self.console.print("\nYou are ready to transition to [bold blue]Phase 1: Double Diamond Planning[/bold blue]!")
+                self.console.print(
+                    f"\n[bold green]Success![/bold green] Seed specification written to:\n[underline]{filepath}[/underline]"
+                )
+                self.console.print(
+                    "\nYou are ready to transition to [bold blue]Phase 1: Double Diamond Planning[/bold blue]!"
+                )
 
 
 # -----------------------------------------------------------------------------
@@ -630,17 +772,24 @@ class InterviewEngine:
 
 app = typer.Typer(help="Ouroboros Socratic Interview Engine CLI Tool")
 
+
 @app.command()
 def interview(
-    name: Optional[str] = typer.Option(None, "--name", "-n", help="Name of the project"),
-    type_str: Optional[str] = typer.Option(None, "--type", "-t", help="greenfield or brownfield"),
-    prompt: Optional[str] = typer.Option(None, "--prompt", "-p", help="Initial product vision"),
+    name: Optional[str] = typer.Option(
+        None, "--name", "-n", help="Name of the project"
+    ),
+    type_str: Optional[str] = typer.Option(
+        None, "--type", "-t", help="greenfield or brownfield"
+    ),
+    prompt: Optional[str] = typer.Option(
+        None, "--prompt", "-p", help="Initial product vision"
+    ),
 ):
     """Launches the Socratic Interview interactive loop."""
     state = InterviewState(
         project_name=name or "",
         project_type=type_str or "greenfield",
-        initial_prompt=prompt or ""
+        initial_prompt=prompt or "",
     )
     engine = InterviewEngine(state=state)
     engine.run_interactive()

@@ -17,7 +17,12 @@ export function createPlayer(x: number, y: number, activeWeapon: WeaponType): Si
         hp: 100,
         speed: 200, // Speed in pixels per second
         activeWeapon,
-        invulnerableTimer: 0 // Duration remaining of invulnerability
+        invulnerableTimer: 0, // Duration remaining of invulnerability
+        xp: 0,
+        level: 1,
+        xpNeeded: 10,
+        weaponLevel: 1,
+        safeModeTimer: 0
     };
 }
 
@@ -61,5 +66,14 @@ export function updatePlayer(player: SimPlayer, input: PlayerInput, dt: number):
     // Tick down invulnerability frames
     if (player.invulnerableTimer > 0) {
         player.invulnerableTimer = Math.max(0, player.invulnerableTimer - dt / 1000);
+    }
+
+    // Tick down Safe Mode timer
+    if (player.safeModeTimer > 0) {
+        player.safeModeTimer = Math.max(0, player.safeModeTimer - dt / 1000);
+        // While safe mode is active, maintain player invulnerability
+        if (player.invulnerableTimer < player.safeModeTimer) {
+            player.invulnerableTimer = player.safeModeTimer;
+        }
     }
 }

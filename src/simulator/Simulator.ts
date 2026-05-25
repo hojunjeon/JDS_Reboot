@@ -99,7 +99,7 @@ export class Simulator {
 
         // 5. Tick enemy movements and behaviors
         for (const enemy of this.state.enemies) {
-            updateEnemy(enemy, this.state.player, dt);
+            updateEnemy(enemy, this.state.player, dt, this.state.projectiles, this.nextProjId);
 
             // Clamp minor enemies inside coordinate margins to keep active in battleground
             const eRad = enemy.radius;
@@ -160,8 +160,50 @@ export class Simulator {
                                     x: enemy.x,
                                     y: enemy.y,
                                     radius: 8,
-                                    healAmount: 25 // Recovers 25 points of health
+                                    healAmount: 25,
+                                    type: 'HEAL'
                                 });
+                            } else if (enemy.type !== 'BOSS') {
+                                // 80% chance to drop Log item, 5% chance clear cache, 5% safe mode, 5% heal capsule, 5% nothing
+                                const rand = Math.random();
+                                if (rand < 0.80) {
+                                    items.push({
+                                        id: this.nextItemId(),
+                                        x: enemy.x,
+                                        y: enemy.y,
+                                        radius: 6,
+                                        healAmount: 0,
+                                        type: 'LOG',
+                                        xpAmount: enemy.type === 'SEG_FAULT' ? 4 : 2 // Heavy tankers give more XP
+                                    });
+                                } else if (rand < 0.85) {
+                                    items.push({
+                                        id: this.nextItemId(),
+                                        x: enemy.x,
+                                        y: enemy.y,
+                                        radius: 8,
+                                        healAmount: 0,
+                                        type: 'CLEAR_CACHE'
+                                    });
+                                } else if (rand < 0.90) {
+                                    items.push({
+                                        id: this.nextItemId(),
+                                        x: enemy.x,
+                                        y: enemy.y,
+                                        radius: 8,
+                                        healAmount: 0,
+                                        type: 'SAFE_MODE'
+                                    });
+                                } else if (rand < 0.95) {
+                                    items.push({
+                                        id: this.nextItemId(),
+                                        x: enemy.x,
+                                        y: enemy.y,
+                                        radius: 8,
+                                        healAmount: 15,
+                                        type: 'HEAL'
+                                    });
+                                }
                             }
                         }
 
@@ -198,7 +240,7 @@ export class Simulator {
             }
         }
 
-        // C. Health Capsule Items vs Player Collision Resolution
+        // C. Health Capsule / XP Log / Power-up Items vs Player Collision Resolution
         if (player.hp > 0) {
             for (let i = items.length - 1; i >= 0; i--) {
                 const item = items[i];
@@ -209,10 +251,64 @@ export class Simulator {
                 // Box-bounding pre-filtering before heavy circular check
                 if (Math.abs(dx) < collisionDist && Math.abs(dy) < collisionDist) {
                     if (dx * dx + dy * dy < collisionDist * collisionDist) {
-                        player.hp = Math.min(player.maxHp, player.hp + item.healAmount);
-                        console.log(`[ITEM] HEAL capsule absorbed. Player HP: ${player.hp}`);
-                        SoundFX.playPowerUp();
+                        if (item.type === 'HEAL') {
+                            player.hp = Math.min(player.maxHp, player.hp + item.healAmount);
+                            console.log(`[ITEM] HEAL capsule absorbed. Player HP: ${player.hp}`);
+                            SoundFX.playPowerUp();
+                        } else if (item.type === 'LOG') {
+                            player.xp += item.xpAmount ?? 1;
+                            console.log(`[ITEM] LOG chip absorbed. Player XP: ${player.xp}`);
+                            SoundFX.playPowerUp();
+
+                            // Handle level up
+                            if (player.xp >= player.xpNeeded) {
+                                player.level++;
+                                player.xp -= player.xpNeeded;
+                                player.xpNeeded = Math.round(player.xpNeeded * 1.5);
+                                player.weaponLevel++;
+                                console.log(`[LEVEL_UP] Player reached Level ${player.level}! Weapon Level upgraded to ${player.weaponLevel}!`);
+                            }
+                        } else if (item.type === 'CLEAR_CACHE') {
+                            console.log(`[ITEM] CLEAR_CACHE activated! Purging bugs...`);
+                            SoundFX.playExplosion();
+                            // Deal damage to all non-boss enemies
+                            for (const enemy of enemies) {
+                                if (enemy.type !== 'BOSS') {
+                                    enemy.hp = 0;
+                                    this.state.killCount++;
+                                }
+                            }
+                        } else if (item.type === 'SAFE_MODE') {
+                            console.log(`[ITEM] SAFE_MODE activated! Invincibility enabled.`);
+                            SoundFX.playPowerUp();
+                            player.safeModeTimer = 5.0; // 5 seconds of safety
+                            player.invulnerableTimer = 5.0;
+                        }
+
                         items.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        // D. Enemy Projectiles vs Player Collision Resolution
+        if (player.hp > 0 && player.invulnerableTimer <= 0) {
+            for (const proj of projectiles) {
+                if (!proj.isEnemy || proj.pierceRemaining <= 0) continue;
+
+                const dx = player.x - proj.x;
+                const dy = player.y - proj.y;
+                const collisionDist = player.radius + proj.radius;
+
+                // Box-bounding pre-filtering before heavy circular check
+                if (Math.abs(dx) < collisionDist && Math.abs(dy) < collisionDist) {
+                    if (dx * dx + dy * dy < collisionDist * collisionDist) {
+                        player.hp = Math.max(0, player.hp - proj.damage);
+                        player.invulnerableTimer = 1.0; // 1 second of invulnerability
+                        proj.pierceRemaining--;
+                        console.log(`[COLLISION] Hit by BOSS_BULLET! Player HP: ${player.hp}`);
+                        SoundFX.playHit();
+                        break; // Player invulnerability triggered; break out of projectile collisions for this frame
                     }
                 }
             }

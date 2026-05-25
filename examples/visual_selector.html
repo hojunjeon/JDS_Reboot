@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiyoon Debug Survival - Premium Visual Playground</title>
+    <style>
+        :root {
+            --glow-color: #00ffaa;
+            --bg-color: #080c14;
+            --text-color: #e2e8f0;
+            --glass-bg: rgba(13, 20, 35, 0.7);
+            --glass-border: rgba(0, 255, 170, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+        }
+
+        /* Ambient scanlines on overall screen */
+        .screen-fx::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            z-index: 10;
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Sidebar Controller */
+        .control-panel {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            bottom: 20px;
+            width: 320px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 25px;
+            z-index: 15;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 170, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            border-bottom: 2px solid rgba(0, 255, 170, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 255, 170, 0.6);
+        }
+
+        .panel-subtitle {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--glow-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Card Selector buttons */
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-card:hover {
+            background: rgba(0, 255, 170, 0.05);
+            border-color: rgba(0, 255, 170, 0.4);
+            transform: translateX(4px);
+        }
+
+        .option-card.active {
+            background: rgba(0, 255, 170, 0.12);
+            border-color: var(--glow-color);
+            box-shadow: 0 0 12px rgba(0, 255, 170, 0.2);
+        }
+
+        .sprite-preview {
+            width: 40px;
+            height: 40px;
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            image-rendering: pixelated;
+        }
+
+        .sprite-preview img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .option-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .option-desc {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* Game Arena Canvas Container */
+        .arena-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 1;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Interactive instruction tooltip */
+        .tooltip {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px 20px;
+            z-index: 15;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .key-btn {
+            color: #fff;
+            background: rgba(0, 255, 170, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 0 2px;
+            border: 1px solid var(--glow-color);
+            font-family: monospace;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="screen-fx">
+
+    <!-- Sidebar Glass Controller -->
+    <div class="control-panel">
+        <div class="panel-header">
+            <div class="panel-title">Visual Spec Selector</div>
+            <div class="panel-subtitle">Jiyoon Debug Survival Playground</div>
+        </div>
+
+        <!-- Player Sprite Selection -->
+        <div>
+            <div class="section-title">
+                <span>🤖</span> Player Sprite Concept
+            </div>
+            <div class="option-group">
+                <div class="option-card active" onclick="selectPlayer(1, this)">
+                    <div class="sprite-preview"><img src="./assets/player_alt1.png" alt="Alt 1"></div>
+                    <div class="option-info">
+                        <div class="option-name">Cyber Bug-Bot</div>
+                        <div class="option-desc">Glowing neon-cyan debugging drone</div>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectPlayer(2, this)">
+                    <div class="sprite-preview"><img src="./assets/player_alt2.png" alt="Alt 2"></div>
+                    <div class="option-info">
+                        <div class="option-name">Glitch Heart</div>
+                        <div class="option-desc">Pulse-green console heart monitor</div>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectPlayer(3, this)">
+                    <div class="sprite-preview"><img src="./assets/player_alt3.png" alt="Alt 3"></div>
+                    <div class="option-info">
+                        <div class="option-name">Neon Hacker Cat</div>
+                        <div class="option-desc">Purple neon kitten wearing VR visor</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Background Theme Selection -->
+        <div>
+            <div class="section-title">
+                <span>🎨</span> Background Theme
+            </div>
+            <div class="option-group">
+                <div class="option-card active" onclick="selectBackground(1, this)">
+                    <div class="option-info">
+                        <div class="option-name">Matrix Digital Rain Grid</div>
+                        <div class="option-desc">Isometric code flow streams</div>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectBackground(2, this)">
+                    <div class="option-info">
+                        <div class="option-name">CRT Glitch Amber Terminal</div>
+                        <div class="option-desc">Oscilloscope diagnostics, amber glow</div>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectBackground(3, this)">
+                    <div class="option-info">
+                        <div class="option-name">Cyberpunk IDE Workspace</div>
+                        <div class="option-desc">Neon syntax-highlighted blueprint</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arena Layer -->
+    <div class="arena-container">
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Interactive Help Tooltip -->
+    <div class="tooltip">
+        <span class="key-btn">W</span><span class="key-btn">A</span><span class="key-btn">S</span><span class="key-btn">D</span> 또는 <span class="key-btn">방향키</span> : 이동 | <span class="key-btn">Spacebar</span> : 디버그 레이저 발사
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Image Cache Setup
+        const images = {
+            player1: new Image(),
+            player2: new Image(),
+            player3: new Image(),
+            bg1: new Image(),
+            bg2: new Image(),
+            bg3: new Image()
+        };
+
+        // Source mappings
+        images.player1.src = './assets/player_alt1.png';
+        images.player2.src = './assets/player_alt2.png';
+        images.player3.src = './assets/player_alt3.png';
+        images.bg1.src = './assets/bg_alt1.png';
+        images.bg2.src = './assets/bg_alt2.png';
+        images.bg3.src = './assets/bg_alt3.png';
+
+        // Selected Indexes
+        let activePlayer = 1;
+        let activeBg = 1;
+
+        // Resize Canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Player Logic
+        const player = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            size: 64,
+            speed: 6,
+            angle: 0,
+            targetAngle: 0
+        };
+
+        // Lasers logic
+        const lasers = [];
+
+        // Key Listeners
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ') {
+                shootLaser();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Laser Spawning
+        function shootLaser() {
+            lasers.push({
+                x: player.x,
+                y: player.y - 10,
+                speedY: -15,
+                color: activePlayer === 1 ? '#00ffaa' : (activePlayer === 2 ? '#39ff14' : '#bd00ff'),
+                width: 4,
+                height: 20
+            });
+        }
+
+        // Dropdowns callbacks
+        function selectPlayer(num, card) {
+            activePlayer = num;
+            // Manage active classes
+            const parent = card.parentElement;
+            Array.from(parent.children).forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+        }
+
+        function selectBackground(num, card) {
+            activeBg = num;
+            const parent = card.parentElement;
+            Array.from(parent.children).forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+        }
+
+        // Background repeat offset logic for dynamic scrolling
+        let bgOffset = 0;
+        let tick = 0;
+
+        function drawBackground() {
+            const currentBg = images[`bg${activeBg}`];
+            if (currentBg.complete && currentBg.naturalWidth > 0) {
+                // Scroll background vertically
+                bgOffset = (bgOffset + 0.8) % currentBg.naturalHeight;
+                
+                // Draw tiled background
+                for (let x = 0; x < canvas.width; x += currentBg.naturalWidth) {
+                    for (let y = -currentBg.naturalHeight + bgOffset; y < canvas.height; y += currentBg.naturalHeight) {
+                        ctx.drawImage(currentBg, x, y);
+                    }
+                }
+            } else {
+                // Fallback smooth futuristic grid
+                ctx.fillStyle = '#080c14';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = 'rgba(0, 255, 170, 0.08)';
+                ctx.lineWidth = 1;
+                
+                const gridSize = 40;
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function updatePlayer() {
+            let moved = false;
+            let dirX = 0;
+
+            if (keys['w'] || keys['arrowup']) { player.y -= player.speed; moved = true; }
+            if (keys['s'] || keys['arrowdown']) { player.y += player.speed; moved = true; }
+            if (keys['a'] || keys['arrowleft']) { player.x -= player.speed; dirX = -1; moved = true; }
+            if (keys['d'] || keys['arrowright']) { player.x += player.speed; dirX = 1; moved = true; }
+
+            // Restrict bounds
+            player.x = Math.max(340, Math.min(canvas.width - player.size / 2 - 20, player.x));
+            player.y = Math.max(player.size / 2 + 20, Math.min(canvas.height - player.size / 2 - 20, player.y));
+
+            // Smooth tilt angle
+            if (moved) {
+                player.targetAngle = dirX * 0.15;
+            } else {
+                player.targetAngle = 0;
+            }
+            player.angle += (player.targetAngle - player.angle) * 0.2;
+        }
+
+        function drawPlayer() {
+            const currentPlayer = images[`player${activePlayer}`];
+            if (currentPlayer.complete && currentPlayer.naturalWidth > 0) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle);
+                
+                // Add soft neon engine thruster hover scale effect
+                const hoverScale = 1 + Math.sin(tick * 0.15) * 0.04;
+                ctx.scale(hoverScale, hoverScale);
+
+                // Add soft cyan/green drop shadow glow around player
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = activePlayer === 1 ? '#00ffaa' : (activePlayer === 2 ? '#39ff14' : '#bd00ff');
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(
+                    currentPlayer,
+                    -player.size / 2,
+                    -player.size / 2,
+                    player.size,
+                    player.size
+                );
+                ctx.restore();
+            }
+        }
+
+        function updateLasers() {
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const laser = lasers[i];
+                laser.y += laser.speedY;
+
+                // Remove out of bounds lasers
+                if (laser.y < -50) {
+                    lasers.splice(i, 1);
+                    continue;
+                }
+
+                // Draw Laser
+                ctx.save();
+                ctx.fillStyle = laser.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = laser.color;
+                ctx.fillRect(laser.x - laser.width / 2, laser.y, laser.width, laser.height);
+                ctx.restore();
+            }
+        }
+
+        // Main Loop
+        function loop() {
+            tick++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+            updatePlayer();
+            updateLasers();
+            drawPlayer();
+
+            requestAnimationFrame(loop);
+        }
+
+        // Start Loop once resources start loading
+        loop();
+    </script>
+</body>
+</html>

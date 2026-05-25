@@ -46,19 +46,26 @@ export function fireWeapon(
 
     if (player.activeWeapon === 'JAVA') {
         // Java uses persistent orbiting shields.
-        // We ensure there are exactly 3 shields in orbit.
+        // The shield count scales with the weapon level (Level 1: 3, Level 2: 4, Level 3: 5, Level 4: 6, Level 5: 8).
+        const shieldCount = player.weaponLevel === 1 ? 3
+                          : player.weaponLevel === 2 ? 4
+                          : player.weaponLevel === 3 ? 5
+                          : player.weaponLevel === 4 ? 6
+                          : 8;
+
         const activeJavaShields = projectiles.filter(p => p.type === 'JAVA');
-        if (activeJavaShields.length < 3) {
-            const startAngles = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
-            // Clear existing Java projectiles to avoid duplicate styling
+        if (activeJavaShields.length < shieldCount) {
+            // Clear existing Java projectiles to avoid duplicates
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 if (projectiles[i].type === 'JAVA') {
                     projectiles.splice(i, 1);
                 }
             }
-            // Spawn 3 fresh ones
-            for (let i = 0; i < 3; i++) {
-                const angle = startAngles[i];
+            // Spawn fresh orbiting shields spread evenly across the circle
+            const damage = 12 + (player.weaponLevel - 1) * 4;
+            const radius = player.weaponLevel >= 5 ? 12 : 8;
+            for (let i = 0; i < shieldCount; i++) {
+                const angle = (i * 2 * Math.PI) / shieldCount;
                 const orbitRadius = 70;
                 projectiles.push({
                     id: nextProjId(),
@@ -67,14 +74,14 @@ export function fireWeapon(
                     y: player.y + Math.sin(angle) * orbitRadius,
                     vx: 0,
                     vy: 0,
-                    damage: 12,
-                    radius: 8,
-                    pierceRemaining: 999999, // infinite pierce for blockades
+                    damage,
+                    radius,
+                    pierceRemaining: 999999, // Infinite pierce for shields
                     angle: angle
                 });
             }
         }
-        return 0; // Persistent weapon has no continuous cooldown firing
+        return 0; // Persistent weapon has no fire cooldown
     }
 
     // Standard projectile weapons
@@ -82,59 +89,99 @@ export function fireWeapon(
         if (player.activeWeapon === 'PYTHON') {
             const target = findNearestEnemy(player.x, player.y, enemies);
             if (target) {
-                // Fire a homing missile targeting this bug
-                const dx = target.x - player.x;
-                const dy = target.y - player.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const speed = 250;
-                const vx = dist > 0 ? (dx / dist) * speed : 0;
-                const vy = dist > 0 ? (dy / dist) * speed : -speed;
+                // Determine shot count, damage, speed, and cooldown based on weapon level
+                const shotCount = player.weaponLevel >= 5 ? 3 : player.weaponLevel >= 3 ? 2 : 1;
+                const damage = 10 + (player.weaponLevel - 1) * 4;
+                const speed = 250 + (player.weaponLevel - 1) * 20;
 
-                projectiles.push({
-                    id: nextProjId(),
-                    type: 'PYTHON',
-                    x: player.x,
-                    y: player.y,
-                    vx,
-                    vy,
-                    damage: 10,
-                    radius: 5,
-                    pierceRemaining: 1, // single target homing
-                    homingTargetId: target.id
-                });
+                for (let i = 0; i < shotCount; i++) {
+                    const dx = target.x - player.x;
+                    const dy = target.y - player.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Angular spread for multi-projectile firing patterns
+                    const angleOffset = (i - (shotCount - 1) / 2) * 0.15;
+                    let vx = dist > 0 ? (dx / dist) * speed : 0;
+                    let vy = dist > 0 ? (dy / dist) * speed : -speed;
+
+                    if (shotCount > 1 && dist > 0) {
+                        const baseAngle = Math.atan2(dy, dx);
+                        const finalAngle = baseAngle + angleOffset;
+                        vx = Math.cos(finalAngle) * speed;
+                        vy = Math.sin(finalAngle) * speed;
+                    }
+
+                    projectiles.push({
+                        id: nextProjId(),
+                        type: 'PYTHON',
+                        x: player.x,
+                        y: player.y,
+                        vx,
+                        vy,
+                        damage,
+                        radius: 5,
+                        pierceRemaining: 1, // Single-target impact
+                        homingTargetId: target.id
+                    });
+                }
                 SoundFX.playShoot();
-                cooldown = 0.45; // Fire every 450ms
+                cooldown = player.weaponLevel >= 4 ? 0.35 : 0.45;
             }
         } else if (player.activeWeapon === 'CPP') {
             const target = findNearestEnemy(player.x, player.y, enemies);
-            const speed = 450;
-            let vx = 0;
-            let vy = -speed;
+            const baseSpeed = 450 + (player.weaponLevel - 1) * 25;
+            const damage = 18 + (player.weaponLevel - 1) * 6;
+            const pierce = 5 + (player.weaponLevel - 1) * 2;
+            const shotCount = player.weaponLevel >= 5 ? 3 : player.weaponLevel >= 3 ? 2 : 1;
 
             if (target) {
-                // Fire a fast, highly-piercing beam in a straight line towards that bug
                 const dx = target.x - player.x;
                 const dy = target.y - player.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 0) {
-                    vx = (dx / dist) * speed;
-                    vy = (dy / dist) * speed;
+
+                for (let i = 0; i < shotCount; i++) {
+                    const angleOffset = (i - (shotCount - 1) / 2) * 0.1;
+                    let vx = 0;
+                    let vy = -baseSpeed;
+
+                    if (dist > 0) {
+                        const baseAngle = Math.atan2(dy, dx);
+                        const finalAngle = baseAngle + angleOffset;
+                        vx = Math.cos(finalAngle) * baseSpeed;
+                        vy = Math.sin(finalAngle) * baseSpeed;
+                    }
+
+                    projectiles.push({
+                        id: nextProjId(),
+                        type: 'CPP',
+                        x: player.x,
+                        y: player.y,
+                        vx,
+                        vy,
+                        damage,
+                        radius: 4,
+                        pierceRemaining: pierce
+                    });
+                }
+            } else {
+                // Fail-safe default trajectory pointing up
+                for (let i = 0; i < shotCount; i++) {
+                    const angleOffset = (i - (shotCount - 1) / 2) * 0.1;
+                    projectiles.push({
+                        id: nextProjId(),
+                        type: 'CPP',
+                        x: player.x,
+                        y: player.y,
+                        vx: Math.sin(angleOffset) * baseSpeed,
+                        vy: -Math.cos(angleOffset) * baseSpeed,
+                        damage,
+                        radius: 4,
+                        pierceRemaining: pierce
+                    });
                 }
             }
-
-            projectiles.push({
-                id: nextProjId(),
-                type: 'CPP',
-                x: player.x,
-                y: player.y,
-                vx,
-                vy,
-                damage: 18,
-                radius: 4,
-                pierceRemaining: 5 // Pierces up to 5 bugs!
-            });
             SoundFX.playShoot();
-            cooldown = 0.45; // Fire every 450ms (fast bursts)
+            cooldown = player.weaponLevel >= 4 ? 0.35 : 0.45;
         }
     }
 
@@ -160,7 +207,9 @@ export function updateProjectiles(
         if (proj.type === 'JAVA') {
             // Orbiting Shields rotate mathematically around player center
             const currentAngle = proj.angle ?? 0;
-            const nextAngle = currentAngle + 3.2 * elapsed; // 3.2 rads/sec orbit speed
+            // Shield speed scales up with the player's weapon level
+            const orbitSpeed = 3.2 + (player.weaponLevel - 1) * 0.5;
+            const nextAngle = currentAngle + orbitSpeed * elapsed;
             proj.angle = nextAngle;
 
             const orbitRadius = 70;
@@ -187,7 +236,7 @@ export function updateProjectiles(
                 const dx = target.x - proj.x;
                 const dy = target.y - proj.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const speed = 250;
+                const speed = 250 + (player.weaponLevel - 1) * 20;
                 if (dist > 0) {
                     proj.vx = (dx / dist) * speed;
                     proj.vy = (dy / dist) * speed;
@@ -198,7 +247,7 @@ export function updateProjectiles(
             proj.x += proj.vx * elapsed;
             proj.y += proj.vy * elapsed;
         } else {
-            // C++ piercing beam moves in a strict straight line
+            // C++ piercing beam and BOSS_BULLET move in a strict straight line
             proj.x += proj.vx * elapsed;
             proj.y += proj.vy * elapsed;
         }

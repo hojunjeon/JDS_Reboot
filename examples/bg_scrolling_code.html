@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiyoon Debug Survival - Scrolling Code Theme (Alt 1)</title>
+    <style>
+        :root {
+            --glow-color: #00f0ff;
+            --bg-color: #020617;
+            --text-color: rgba(0, 240, 255, 0.85);
+            --accent-color: #d946ef;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-color) url('./assets/bg_alt1.png') no-repeat center center;
+            background-size: cover;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text-color);
+        }
+
+        /* Scanline CRT Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(0, 240, 255, 0.03), rgba(217, 70, 239, 0.02), rgba(0, 240, 255, 0.03));
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Screen Glow */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.06) 0%, rgba(0, 0, 0, 0.4) 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Interface Overlay */
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .hud-panel {
+            background: rgba(2, 6, 23, 0.85);
+            border: 1px solid var(--glow-color);
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.05);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        .hud-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+
+        .hud-value {
+            font-size: 18px;
+            color: var(--glow-color);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+            font-weight: bold;
+        }
+
+        .control-btn {
+            background: rgba(2, 6, 23, 0.9);
+            border: 1px solid var(--glow-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
+            text-transform: uppercase;
+        }
+
+        .control-btn:hover {
+            background: var(--glow-color);
+            color: #020617;
+            box-shadow: 0 0 12px var(--glow-color);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Player Character */
+        #player {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            z-index: 4;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 0 8px var(--glow-color));
+            image-rendering: pixelated;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            background: rgba(2, 6, 23, 0.9);
+            border: 1px dashed var(--glow-color);
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .instructions span {
+            color: #fff;
+            background: rgba(0, 240, 255, 0.25);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 3px;
+            border: 1px solid var(--glow-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <div>
+            <div class="hud-panel">
+                <div class="hud-title">THEME 01 — ULTRA-CLEAN ALT 1</div>
+                <div class="hud-value">Premium Coding Blue Background</div>
+            </div>
+            
+            <div class="hud-panel" style="margin-top: 12px;">
+                <div class="hud-title">ROBOT CONTROLS</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="control-btn" id="btn-speed" onclick="toggleSpeed()">SPEED: NORMAL</button>
+                    <button class="control-btn" id="btn-weapon" onclick="cycleWeapon()">WEAPON: CYAN PULSE</button>
+                    <button class="control-btn" id="btn-clear" onclick="purgeBugs()">PURGE ALL</button>
+                </div>
+                <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
+                    [SPACE]: Fire Debug Pulse | [C]: Swap Weapon | [V]: Speed Boost
+                </div>
+            </div>
+        </div>
+        
+        <div class="hud-panel" style="text-align: right;">
+            <div class="hud-title">FPS</div>
+            <div class="hud-value" id="fps-counter">60.0</div>
+            <div class="hud-title" style="margin-top: 10px;">DEBUGGED CODES</div>
+            <div class="hud-value" id="debug-counter" style="color: var(--accent-color); text-shadow: 0 0 8px rgba(217, 70, 239, 0.5);">0</div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="bg-canvas"></canvas>
+    </div>
+
+    <!-- Interactive Player Sprite -->
+    <img id="player" src="./assets/player_alt1.png" alt="Player Robot" />
+
+    <div class="instructions">
+        <span>W</span><span>A</span><span>S</span><span>D</span> / <span>방향키</span> 이동 | <span>SPACE</span> 디버그 탄환 발사!
+    </div>
+
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        const player = document.getElementById('player');
+
+        // Resize Canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Sample code blocks to scroll
+        const codeSnippets = [
+            "def debug_session(agent):",
+            "    print('[OK] Initializing compiler...'",
+            "    bugs = detect_syntax_errors()",
+            "    for bug in bugs:",
+            "        agent.shoot(bug)",
+            "        # Auto-heal applied",
+            "class NullPointerException extends Exception {",
+            "    public NullPointerException(String msg) {",
+            "        super(msg); // Hotfix patch applied",
+            "    }",
+            "}",
+            "#include <iostream>",
+            "int main() {",
+            "    std::cout << 'JiyoonDebugSurvival init' << std::endl;",
+            "    char* leak = new char[1024];",
+            "    delete[] leak; // Leak fixed",
+            "    return 0;",
+            "}",
+            "const phaserConfig = {",
+            "    type: Phaser.AUTO,",
+            "    width: 800, height: 600,",
+            "    physics: { default: 'arcade' },",
+            "    scene: [BootScene, PlayScene]",
+            "};",
+            "git commit -m 'Patch anti-regression rules'",
+            "npm run dev --host 0.0.0.0",
+            "System.gc(); // Forced memory clean",
+            "Segmentation Fault (core dumped)",
+            "IndentationError: unexpected indent",
+            "Uncaught TypeError: Cannot read properties of null"
+        ];
+
+        // Column setup
+        const fontSize = 15;
+        let columns = [];
+
+        function initColumns() {
+            columns = [];
+            const colCount = Math.floor(canvas.width / 240); // Width of code column
+            for (let i = 0; i < colCount; i++) {
+                columns.push({
+                    x: i * 250 + 40 + Math.random() * 30,
+                    y: Math.random() * -canvas.height,
+                    speed: 1.0 + Math.random() * 1.5,
+                    opacity: 0.25 + Math.random() * 0.45,
+                    lines: getRandomCodeLines()
+                });
+            }
+        }
+
+        function getRandomCodeLines() {
+            const list = [];
+            const count = 12 + Math.floor(Math.random() * 10);
+            for(let i=0; i<count; i++) {
+                list.push(codeSnippets[Math.floor(Math.random() * codeSnippets.length)]);
+            }
+            return list;
+        }
+
+        initColumns();
+        window.addEventListener('resize', initColumns);
+
+        // Player Position & Interaction
+        let posX = window.innerWidth / 2 - 24;
+        let posY = window.innerHeight / 2 - 24;
+        let playerSpeed = 8;
+        let isTurbo = false;
+        let weaponMode = 'cyan'; // 'cyan' or 'magenta'
+        let debuggedCount = 0;
+        const keys = {};
+
+        player.style.left = posX + 'px';
+        player.style.top = posY + 'px';
+
+        // Projectiles and Particles Systems
+        const projectiles = [];
+        const particles = [];
+
+        // Audio Engine Synthesis
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSynthBeep(type) {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (type === 'magenta') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                } else {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1040, audioCtx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                }
+                
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.12);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.12);
+            } catch (e) {
+                // Ignore Web Audio Context auto-play blocking
+            }
+        }
+
+        function playExplosionSynth() {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch (e) {
+                // Ignore
+            }
+        }
+
+        // Control Panel Toggles
+        function toggleSpeed() {
+            isTurbo = !isTurbo;
+            playerSpeed = isTurbo ? 14 : 8;
+            document.getElementById('btn-speed').innerText = isTurbo ? "SPEED: TURBO BOOST" : "SPEED: NORMAL";
+            document.getElementById('btn-speed').style.borderColor = isTurbo ? "var(--accent-color)" : "var(--glow-color)";
+            document.getElementById('btn-speed').style.color = isTurbo ? "var(--accent-color)" : "var(--text-color)";
+            initAudio();
+        }
+
+        function cycleWeapon() {
+            weaponMode = weaponMode === 'cyan' ? 'magenta' : 'cyan';
+            const displayStr = weaponMode === 'cyan' ? "WEAPON: CYAN PULSE" : "WEAPON: MAGENTA RAY";
+            document.getElementById('btn-weapon').innerText = displayStr;
+            document.getElementById('btn-weapon').style.borderColor = weaponMode === 'cyan' ? "var(--glow-color)" : "var(--accent-color)";
+            document.getElementById('btn-weapon').style.color = weaponMode === 'cyan' ? "var(--text-color)" : "var(--accent-color)";
+            initAudio();
+        }
+
+        function purgeBugs() {
+            initAudio();
+            playExplosionSynth();
+            columns.forEach(col => {
+                // Create particle bursts on all columns
+                for (let i = 0; i < 4; i++) {
+                    spawnParticles(col.x, canvas.height / 2, 'var(--glow-color)');
+                }
+                col.y = -col.lines.length * (fontSize + 6);
+                col.lines = getRandomCodeLines();
+            });
+            debuggedCount += 50;
+            document.getElementById('debug-counter').innerText = debuggedCount;
+        }
+
+        // Projectile Shooting
+        function fireDebugBullet() {
+            const color = weaponMode === 'cyan' ? 'rgba(0, 240, 255, 0.95)' : 'rgba(217, 70, 239, 0.95)';
+            projectiles.push({
+                x: posX + 24,
+                y: posY,
+                speed: 15,
+                radius: 4,
+                color: color,
+                type: weaponMode
+            });
+            playSynthBeep(weaponMode);
+        }
+
+        // Particles spawner
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 6; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    radius: 1.5 + Math.random() * 2,
+                    color: color,
+                    life: 1.0,
+                    decay: 0.02 + Math.random() * 0.04
+                });
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                fireDebugBullet();
+            }
+            if (e.key.toLowerCase() === 'c') {
+                cycleWeapon();
+            }
+            if (e.key.toLowerCase() === 'v') {
+                toggleSpeed();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Animation Loop
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+
+        function update() {
+            // Update Player Move
+            let moved = false;
+            let dirX = 0;
+            let dirY = 0;
+
+            if (keys['w'] || keys['arrowup']) { posY -= playerSpeed; dirY = -1; moved = true; }
+            if (keys['s'] || keys['arrowdown']) { posY += playerSpeed; dirY = 1; moved = true; }
+            if (keys['a'] || keys['arrowleft']) { posX -= playerSpeed; dirX = -1; moved = true; }
+            if (keys['d'] || keys['arrowright']) { posX += playerSpeed; dirX = 1; moved = true; }
+
+            // Bounds checks
+            posX = Math.max(0, Math.min(window.innerWidth - 48, posX));
+            posY = Math.max(0, Math.min(window.innerHeight - 48, posY));
+
+            player.style.left = posX + 'px';
+            player.style.top = posY + 'px';
+
+            if (moved) {
+                player.style.transform = `scale(1.1) rotate(${dirX * 8}deg)`;
+            } else {
+                player.style.transform = 'scale(1) rotate(0deg)';
+            }
+
+            // Draw Background clear (translucent blue layer to let the CSS premium background show)
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.35)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update & Draw Projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                proj.y -= proj.speed;
+
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+                ctx.fillStyle = proj.color;
+                ctx.shadowColor = proj.color;
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0; // Reset shadow
+
+                // Remove out of bounds projectiles
+                if (proj.y < 0) {
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            // Draw Code Lines
+            ctx.font = `${fontSize}px 'Courier New', monospace`;
+
+            columns.forEach(col => {
+                let currentY = col.y;
+                col.lines.forEach((line, index) => {
+                    // Collision check with projectiles
+                    for (let pIdx = projectiles.length - 1; pIdx >= 0; pIdx--) {
+                        const proj = projectiles[pIdx];
+                        // Calculate bullet hitting line bounding area
+                        if (
+                            proj.x > col.x - 20 && 
+                            proj.x < col.x + 220 &&
+                            Math.abs(proj.y - currentY) < 14
+                        ) {
+                            // Bug debugged/hit!
+                            spawnParticles(proj.x, proj.y, proj.color);
+                            playExplosionSynth();
+                            
+                            // Remove projectile
+                            projectiles.splice(pIdx, 1);
+                            
+                            // Splice line out or modify it
+                            col.lines[index] = "[SUCCESS] Auto-Patched OK";
+                            debuggedCount++;
+                            document.getElementById('debug-counter').innerText = debuggedCount;
+                            break;
+                        }
+                    }
+
+                    // Hover interaction with player position
+                    const dist = Math.hypot((col.x + 100) - posX, currentY - posY);
+                    let finalOpacity = col.opacity;
+                    let offsetX = 0;
+
+                    if (dist < 140) {
+                        const force = (140 - dist) / 140;
+                        finalOpacity = col.opacity * (1 - force * 0.7);
+                        offsetX = ((col.x + 100 - posX) > 0 ? 1 : -1) * force * 40;
+                    }
+
+                    // Theme-specific neon coloring
+                    if (line.includes("[SUCCESS]")) {
+                        ctx.fillStyle = `rgba(217, 70, 239, ${finalOpacity})`; // Pulsing pink success
+                    } else if (line.includes("Error") || line.includes("Fault")) {
+                        ctx.fillStyle = `rgba(239, 68, 68, ${finalOpacity})`; // Red errors
+                    } else {
+                        ctx.fillStyle = `rgba(0, 240, 255, ${finalOpacity})`; // Glowing cyan codes
+                    }
+
+                    ctx.fillText(line, col.x + offsetX, currentY);
+                    currentY += fontSize + 6;
+                });
+
+                col.y += col.speed;
+
+                // Reset column if scrolled off
+                if (col.y > canvas.height) {
+                    col.y = -col.lines.length * (fontSize + 6);
+                    col.speed = 1.0 + Math.random() * 1.5;
+                    col.opacity = 0.25 + Math.random() * 0.45;
+                    col.lines = getRandomCodeLines();
+                }
+            });
+
+            // Update & Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const part = particles[i];
+                part.x += part.vx;
+                part.y += part.vy;
+                part.life -= part.decay;
+
+                ctx.beginPath();
+                ctx.arc(part.x, part.y, part.radius, 0, Math.PI * 2);
+                ctx.fillStyle = part.color.replace('0.95', part.life);
+                ctx.fill();
+
+                if (part.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // FPS Counter
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = (frameCount * 1000) / (now - lastTime);
+                document.getElementById('fps-counter').innerText = fps.toFixed(1);
+                frameCount = 0;
+                lastTime = now;
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>

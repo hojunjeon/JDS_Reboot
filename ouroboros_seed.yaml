@@ -1,6 +1,6 @@
 title: Jiyoon Debug Survival
 description: A 2D wave survival action game set in a corrupted IDE where programming
-  bugs are monsters.
+  bugs are monsters, featuring customized character portraits and clean aesthetics.
 acceptance_criteria_tree:
 - id: 100
   description: The game starts from a Monospace/Terminal styled menu scene.
@@ -34,7 +34,7 @@ acceptance_criteria_tree:
     - 100
     children: []
 - id: 200
-  description: The active play field is controlled by keyboard controls.
+  description: The active play field is controlled by keyboard controls with customized avatar.
   status: pending
   depends_on: []
   children:
@@ -52,11 +52,29 @@ acceptance_criteria_tree:
     depends_on:
     - 200
     children: []
+  - id: 203
+    description: The player avatar is locked to 'player_alt3.png' based on photo portrait.
+    status: pending
+    depends_on:
+    - 200
+    children: []
+  - id: 204
+    description: Level-up triggers a card selection overlay (Vampire Survivors style) pausing the game.
+    status: pending
+    depends_on:
+    - 200
+    children: []
+  - id: 205
+    description: Monsters drop 'Log' File Chips for XP and special items like Clear Cache and Safe Mode.
+    status: pending
+    depends_on:
+    - 200
+    children: []
 - id: 300
   description: Weapons execute auto-fire cycles targeting local bug monsters.
   status: pending
   depends_on:
-  - 200
+    - 200
   children:
   - id: 301
     description: 'Python Weapon: Automatic firing of home-in shots targeting the nearest
@@ -83,7 +101,7 @@ acceptance_criteria_tree:
   description: Enemy spawn waves and behavior models are active in the arena.
   status: pending
   depends_on:
-  - 200
+    - 200
   children:
   - id: 401
     description: 'SyntaxError basic tracker: pursues player coordinates, inflicts
@@ -133,10 +151,16 @@ acceptance_criteria_tree:
     - 500
     children: []
   - id: 502
-    description: Defeating the Boss halts basic spawns and triggers Stage Clear transition.
+    description: Boss AI features Phase Branching (Phase 1 geometric radiant error fire; Phase 2 red glitch dash attacks).
     status: pending
     depends_on:
     - 501
+    children: []
+  - id: 503
+    description: Defeating the Boss halts basic spawns and triggers Stage Clear transition.
+    status: pending
+    depends_on:
+    - 502
     children: []
 - id: 600
   description: Game HUD and retro diagnostics display.
@@ -151,8 +175,7 @@ acceptance_criteria_tree:
     - 600
     children: []
   - id: 602
-    description: CRT scanlines, glitch effects, and monospace fonts establish terminal
-      IDE aesthetic.
+    description: Background is locked to premium clean gradient 'bg_alt1.png' avoiding messy visual clutter.
     status: pending
     depends_on:
     - 600

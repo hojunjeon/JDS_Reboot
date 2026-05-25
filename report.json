@@ -1,0 +1,19 @@
+{
+  "consensus_score": 30.0,
+  "mechanical_ok": false,
+  "semantic_ok": false,
+  "total_judges": 2,
+  "agreement_rate": 100.0,
+  "ambiguity_index": 0.0,
+  "satisfied_requirements": [
+    "Requirement-0",
+    "Requirement-1",
+    "Requirement-2"
+  ],
+  "unsatisfied_requirements": [
+    "Requirement-3"
+  ],
+  "conflicts": [],
+  "verdict": "REJECTED",
+  "summary_markdown": "# ⚖️ Ouroboros Verification & Consensus Report\n\n> [!CAUTION]\n> **VERDICT: REJECTED** ❌\n> Code has failed mechanical checks (compilation/tests) or has confirmed requirement gaps.\n\n## 📊 Summary Metrics\n\n- **Consensus Score**: `30.0/100.0` (Veto factored: `Yes`)\n- **Mechanical Validation**: `FAIL`\n- **Semantic Consensus**: `FAIL`\n- **Agreement Rate**: `100.0%` (4/4 in perfect sync)\n- **Ambiguity Index**: `0.000` (Scale: 0.0 = perfect agreement, 1.0 = total disagreement)\n\n## ⚙️ Stage 1: Mechanical Health Report\n\n- **Compilation Status**: `CLEAN`\n  *File Compilation Breakdown:*\n  - `setup.py`: OK\n  - `generate_and_eval.py`: OK\n  - `run_interview.py`: OK\n  - `cli.py`: OK\n  - `config.py`: OK\n  - `evaluation.py`: OK\n  - `evolution.py`: OK\n  - `execution.py`: OK\n  - `interview.py`: OK\n  - `resilience.py`: OK\n  - `seed.py`: OK\n  - `test_core.py`: OK\n  - `__init__.py`: OK\n- **Unit Tests**: `PASSED` (Exit Code: `0`)\n- **Style Check (Linter)**: `ISSUES FOUND`\n\n## 🎯 Stage 2: Requirement Compliance Status\n\n### Satisfied Requirements\n- [x] **Requirement-0** (Unanimous agreement)\n- [x] **Requirement-1** (Unanimous agreement)\n- [x] **Requirement-2** (Unanimous agreement)\n\n### Unsatisfied Requirements\n- [ ] **Requirement-3** (Definite failure)"
+}

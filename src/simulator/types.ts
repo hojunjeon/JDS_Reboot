@@ -30,6 +30,11 @@ export interface SimPlayer {
     speed: number;
     activeWeapon: WeaponType;
     invulnerableTimer: number;
+    xp: number;
+    level: number;
+    xpNeeded: number;
+    weaponLevel: number;
+    safeModeTimer: number; // Invincibility buffer from Safe Mode pickup
 }
 
 export interface SimEnemy {
@@ -45,11 +50,17 @@ export interface SimEnemy {
     radius: number;
     damage: number;
     customAIState?: number; // Used for fleeing logic or boss patterns
+    phase?: number; // Boss active phase (1 or 2)
+    dashTimer?: number; // Timing for boss dashes
+    dashTargetX?: number; // Locked target for boss glitch dash
+    dashTargetY?: number;
+    isDashing?: boolean; // Dash state flag
+    shootCooldown?: number; // Boss weapon cooldown
 }
 
 export interface SimProjectile {
     id: string;
-    type: WeaponType;
+    type: WeaponType | 'BOSS_BULLET';
     x: number;
     y: number;
     vx: number;
@@ -59,6 +70,7 @@ export interface SimProjectile {
     pierceRemaining: number;
     homingTargetId?: string; // Used for homing projectiles (Python)
     angle?: number; // Used for orbiting projectiles (Java)
+    isEnemy?: boolean; // True if projectile was fired by an enemy (Boss)
 }
 
 export interface SimItem {
@@ -67,6 +79,8 @@ export interface SimItem {
     y: number;
     radius: number;
     healAmount: number;
+    type: 'HEAL' | 'LOG' | 'CLEAR_CACHE' | 'SAFE_MODE';
+    xpAmount?: number;
 }
 
 export interface SimEvent {

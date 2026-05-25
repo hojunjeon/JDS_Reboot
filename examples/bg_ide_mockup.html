@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiyoon Debug Survival - Cyberpunk IDE Workbench</title>
+    <style>
+        :root {
+            --glow-cyan: #00f3ff;
+            --glow-purple: #b92eff;
+            --bg-color: #0b0714;
+            --sidebar-bg: #0d0918;
+            --editor-bg: rgba(15, 10, 24, 0.75);
+            --text-normal: #c7bbfd;
+            --text-keyword: #ff2e93;
+            --text-string: #00f5d4;
+            --text-comment: #72628a;
+            --text-number: #ffbe0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-normal);
+        }
+
+        /* IDE Container */
+        .ide-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            border: 2px solid rgba(185, 46, 255, 0.4);
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(185, 46, 255, 0.15), inset 0 0 20px rgba(0, 243, 255, 0.1);
+            position: relative;
+        }
+
+        /* Top Title Bar */
+        .ide-header {
+            height: 38px;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid rgba(185, 46, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 12px;
+            color: #fff;
+            letter-spacing: 0.8px;
+            z-index: 10;
+        }
+
+        .window-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .window-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Workspace Body */
+        .ide-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar Explorer & Controls */
+        .ide-sidebar {
+            width: 230px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid rgba(185, 46, 255, 0.25);
+            display: flex;
+            flex-direction: column;
+            padding: 15px 12px;
+            font-size: 12px;
+            line-height: 2;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+
+        .sidebar-title {
+            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1.8px;
+            color: var(--glow-cyan);
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            padding-bottom: 4px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 8px;
+            color: #d1c7eb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+
+        .file-item:hover, .file-item.active {
+            background-color: rgba(185, 46, 255, 0.15);
+            color: var(--glow-cyan);
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+            padding-left: 12px;
+        }
+
+        /* Interactive Sidebar Control Board */
+        .control-board {
+            margin-top: auto;
+            border-top: 1px dashed rgba(185, 46, 255, 0.3);
+            padding-top: 15px;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .ctrl-btn {
+            background: rgba(185, 46, 255, 0.1);
+            border: 1px solid rgba(185, 46, 255, 0.4);
+            color: #dfd5ff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 8px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            letter-spacing: 0.5px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(0, 243, 255, 0.2);
+            border-color: var(--glow-cyan);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .ctrl-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Editor Area with Premium Blueprint Visual Theme */
+        .ide-editor-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background-color: #0c0817;
+            /* Premium Blueprint Asset Integration */
+            background-image: url('./assets/bg_alt3.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .editor-tabs {
+            height: 35px;
+            background-color: rgba(13, 9, 24, 0.9);
+            display: flex;
+            border-bottom: 1px solid rgba(185, 46, 255, 0.2);
+            z-index: 3;
+        }
+
+        .editor-tab {
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            background-color: rgba(20, 14, 36, 0.9);
+            color: #fff;
+            border-top: 2px solid var(--glow-purple);
+            box-shadow: inset 0 0 10px rgba(185, 46, 255, 0.2);
+            text-shadow: 0 0 5px rgba(185, 46, 255, 0.5);
+        }
+
+        /* Glassmorphism Editor Pane Overlay */
+        .editor-content {
+            flex: 1;
+            padding: 25px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.7;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--editor-bg);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 1;
+        }
+
+        /* Syntaxes */
+        .kw { color: var(--text-keyword); font-weight: bold; text-shadow: 0 0 6px rgba(255, 46, 147, 0.3); }
+        .str { color: var(--text-string); text-shadow: 0 0 6px rgba(0, 245, 212, 0.3); }
+        .cmt { color: var(--text-comment); font-style: italic; }
+        .num { color: var(--text-number); text-shadow: 0 0 6px rgba(255, 190, 11, 0.3); }
+        .func { color: #818cf8; text-shadow: 0 0 6px rgba(129, 140, 248, 0.3); }
+
+        /* Glowing Player Character Sprite */
+        #player {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            z-index: 4;
+            transition: transform 0.08s ease;
+            filter: drop-shadow(0 0 12px var(--glow-purple)) saturate(1.8);
+            image-rendering: pixelated;
+            cursor: pointer;
+        }
+
+        #player.glitch-anim {
+            animation: sprite-glitch 0.2s infinite;
+        }
+
+        /* Floating Bug Entities */
+        .bug-entity {
+            position: absolute;
+            background: rgba(255, 46, 147, 0.15);
+            border: 1px solid var(--text-keyword);
+            padding: 4px 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #fff;
+            border-radius: 4px;
+            z-index: 3;
+            box-shadow: 0 0 12px rgba(255, 46, 147, 0.4);
+            pointer-events: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bug-entity::before {
+            content: '👾';
+        }
+
+        /* Glowing Laser Beam */
+        #laser {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, var(--glow-purple), var(--glow-cyan));
+            box-shadow: 0 0 15px var(--glow-cyan), 0 0 5px #fff;
+            z-index: 3;
+            transform-origin: left center;
+            display: none;
+            pointer-events: none;
+        }
+
+        /* Orbiting Particle */
+        .orbiter {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--glow-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--glow-cyan);
+            z-index: 4;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Diagnostic HUD Screen Overlay */
+        .hud-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 210px;
+            background: rgba(13, 9, 24, 0.85);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #fff;
+            z-index: 3;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .hud-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+
+        .hud-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--glow-purple), var(--glow-cyan));
+            width: 80%;
+            box-shadow: 0 0 8px var(--glow-cyan);
+            transition: width 0.3s ease;
+        }
+
+        /* Scanline Overlay Effect */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 8;
+            pointer-events: none;
+        }
+
+        /* Glitch Warning Alert */
+        #alert-box {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: rgba(255, 46, 147, 0.9);
+            border: 1px solid #fff;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255, 46, 147, 0.8);
+            z-index: 9;
+            display: none;
+            animation: alert-flash 0.4s infinite alternate;
+        }
+
+        /* Bottom Status Bar */
+        .ide-statusbar {
+            height: 28px;
+            background-color: var(--sidebar-bg);
+            border-top: 1px solid rgba(185, 46, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 11px;
+            color: rgba(0, 243, 255, 0.7);
+            z-index: 10;
+        }
+
+        /* Controls Instructions Overlay */
+        .instructions {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            background: rgba(13, 9, 24, 0.92);
+            border: 1px dashed var(--glow-cyan);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 11px;
+            letter-spacing: 0.8px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            pointer-events: none;
+        }
+
+        .instructions span {
+            color: #fff;
+            background: rgba(0, 243, 255, 0.15);
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin: 0 2px;
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            font-weight: bold;
+        }
+
+        /* Keyframes */
+        @keyframes sprite-glitch {
+            0% { filter: drop-shadow(0 0 12px var(--glow-purple)) hue-rotate(0deg); }
+            50% { filter: drop-shadow(0 0 16px var(--glow-cyan)) hue-rotate(180deg) skewX(6deg); transform: scale(1.15); }
+            100% { filter: drop-shadow(0 0 12px var(--glow-purple)) hue-rotate(360deg); }
+        }
+
+        @keyframes alert-flash {
+            from { opacity: 0.3; }
+            to { opacity: 1.0; }
+        }
+
+        @keyframes particle-explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ide-container">
+        <!-- Scanline Film Layer -->
+        <div class="scanlines" id="scanline-layer"></div>
+
+        <!-- Top Header Title -->
+        <div class="ide-header">
+            <div class="window-dots">
+                <div class="window-dot" style="background-color: #ff5f56;"></div>
+                <div class="window-dot" style="background-color: #ffbd2e;"></div>
+                <div class="window-dot" style="background-color: #27c93f;"></div>
+            </div>
+            <div>Jiyoon Debug Survival - Sandbox Visual Workbench</div>
+            <div style="color: var(--glow-purple); font-weight: bold; text-shadow: 0 0 8px var(--glow-purple);">Alternative 3: Cyberpunk Blueprint</div>
+        </div>
+
+        <div class="ide-body">
+            <!-- Sidebar Navigation & Interactive Panel -->
+            <div class="ide-sidebar">
+                <div class="sidebar-title">Workspace Explorer</div>
+                <div class="file-item"><span style="color: var(--glow-cyan);">📁</span> src</div>
+                <div class="file-item active" style="margin-left: 10px;"><span>📄</span> PlayScene.js</div>
+                <div class="file-item" style="margin-left: 10px;"><span>📄</span> Player.js</div>
+                <div class="file-item" style="margin-left: 10px;"><span>📄</span> Enemy.js</div>
+                <div class="file-item"><span>📄</span> package.json</div>
+                <div class="file-item"><span>📄</span> tsconfig.json</div>
+
+                <!-- Interactive Player Control Board -->
+                <div class="control-board">
+                    <div class="sidebar-title">Robot Control Board</div>
+                    <div class="control-grid">
+                        <button onclick="triggerLaser()" class="ctrl-btn" title="Synthesizes sound and fires a pierce laser beam">🔥 SHOOT</button>
+                        <button onclick="toggleGlitch()" class="ctrl-btn" title="Toggles visual glitch animation and synth sound">⚡ GLITCH</button>
+                        <button onclick="spawnBug()" class="ctrl-btn" title="Spawns mock bug entities in the workspace">👾 SPAWN</button>
+                        <button onclick="resetPosition()" class="ctrl-btn" title="Resets position of the cat character">🔄 RESET</button>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                        <button onclick="toggleOrbiters()" class="ctrl-btn" style="width: 100%;">🛡️ DEFENSIVE SHIELD</button>
+                        <button onclick="toggleScanlines()" class="ctrl-btn" style="width: 100%; margin-top: 4px;">📺 TOGGLE SCANLINES</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Pane incorporating the Premium Blueprint Background -->
+            <div class="ide-editor-wrapper">
+                <div class="editor-tabs">
+                    <div class="editor-tab">PlayScene.js</div>
+                </div>
+
+                <div class="editor-content" id="editor-pane">
+                    <!-- Diagnostic HUD Screen Overlay -->
+                    <div class="hud-panel">
+                        <div class="hud-row">
+                            <span style="color: var(--glow-cyan);">MODEL:</span>
+                            <span>HACKER_CAT_v3.0</span>
+                        </div>
+                        <div class="hud-row">
+                            <span style="color: var(--text-keyword);">SYS STATUS:</span>
+                            <span id="sys-status" style="color: #00ff66; font-weight: bold;">ACTIVE</span>
+                        </div>
+                        <div class="hud-row" style="margin-top: 8px; flex-direction: column;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--glow-purple);">SHIELD POWER:</span>
+                                <span id="hp-text">80%</span>
+                            </div>
+                            <div class="hud-bar">
+                                <div class="hud-bar-fill" id="hp-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Indicator Box -->
+                    <div id="alert-box">WARNING: SHIELD COLLISION DETECTED!</div>
+
+                    <!-- Firing Laser Beam Element -->
+                    <div id="laser"></div>
+
+                    <!-- Orbiting Shield Particle -->
+                    <div id="orbiter1" class="orbiter"></div>
+                    <div id="orbiter2" class="orbiter"></div>
+
+                    <!-- Highlighted IDE Sandbox Mock Code -->
+                    <div><span class="cmt">// Jiyoon Debug Survival - Alternative 3 Concept</span></div>
+                    <div><span class="kw">import</span> { Player } <span class="kw">from</span> <span class="str">'./Player'</span>;</div>
+                    <div><span class="kw">import</span> { Enemy } <span class="kw">from</span> <span class="str">'./Enemy'</span>;</div>
+                    <br>
+                    <div><span class="kw">class</span> <span class="func">PlayScene</span> <span class="kw">extends</span> <span class="func">Phaser.Scene</span> {</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="func">constructor</span>() {</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">super</span>({ key: <span class="str">'PlayScene'</span> });</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                    <br>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="func">create</span>() {</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// Gated verification setup</span></div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">this</span>.player = <span class="kw">new</span> <span class="func">Player</span>(<span class="kw">this</span>, <span class="num">400</span>, <span class="num">300</span>);</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">this</span>.bugs = <span class="kw">this</span>.physics.add.group();</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// Laser compiler fire event</span></div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">this</span>.time.addEvent({</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delay: <span class="num">700</span>,</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;callback: <span class="kw">this</span>.shootLaser,</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;callbackScope: <span class="kw">this</span>,</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop: <span class="kw">true</span></div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});</div>
+                    <div>&nbsp;&nbsp;&nbsp;&nbsp;}</div>
+                    <div>}</div>
+
+                    <!-- Glowing Alternative 3 Cybernetic Character Sprite -->
+                    <img id="player" src="./assets/player_alt3.png" alt="Neon Hacker Cat" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom IDE Status Bar -->
+        <div class="ide-statusbar">
+            <div>Line 28, Column 16</div>
+            <div>LF | UTF-8 | TypeScript</div>
+            <div style="color: var(--glow-cyan); font-weight: bold;">HACKER_CAT INTERACTIVE LAYER LOADED</div>
+        </div>
+    </div>
+
+    <!-- Movement Keybind Helper Banner -->
+    <div class="instructions">
+        <span>W</span><span>A</span><span>S</span><span>D</span> 또는 <span>방향키</span>로 로봇 고양이를 움직이고 <span>마우스 클릭</span>이나 <span>SHOOT</span> 버튼으로 레이저를 쏘세요!
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const editorPane = document.getElementById('editor-pane');
+        const laser = document.getElementById('laser');
+        const hpBar = document.getElementById('hp-bar');
+        const hpText = document.getElementById('hp-text');
+        const sysStatus = document.getElementById('sys-status');
+        const alertBox = document.getElementById('alert-box');
+        const scanlineLayer = document.getElementById('scanline-layer');
+
+        // Orbiters
+        const orbiter1 = document.getElementById('orbiter1');
+        const orbiter2 = document.getElementById('orbiter2');
+
+        // Player Stats & Position (Relative to Editor Content area)
+        let posX = editorPane.clientWidth / 2 - 24;
+        let posY = editorPane.clientHeight / 2 - 24;
+        const playerSpeed = 8;
+        let playerHp = 80;
+        let laserFired = false;
+        let glitchEnabled = false;
+        let orbitersEnabled = false;
+        let orbitAngle = 0;
+        const keys = {};
+        let activeBugs = [];
+
+        player.style.left = posX + 'px';
+        player.style.top = posY + 'px';
+
+        // Web Audio Context for synthesizer sound effects
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        // Synthesize Synth Beep (Sound FX)
+        function playSound(freq, type, duration, volume = 0.1) {
+            try {
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                
+                // Exponential decay envelope
+                gain.gain.setValueAtTime(volume, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                // Ignore audio context errors in restricted sandboxes
+            }
+        }
+
+        // Keyboard Event Listeners
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            // Map Space to Laser Shoot
+            if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                triggerLaser();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Trigger Compiler Pierce Laser (Interactive Action)
+        function triggerLaser() {
+            if (laserFired) return;
+            laserFired = true;
+
+            // Synthesis high-tech shoot sound
+            playSound(880, 'triangle', 0.25, 0.15);
+            setTimeout(() => playSound(1320, 'sine', 0.15, 0.1), 80);
+
+            // Position and align the laser element starting from the player cat head
+            const playerCenterX = posX + 24;
+            const playerCenterY = posY + 24;
+            
+            laser.style.left = playerCenterX + 'px';
+            laser.style.top = (playerCenterY - 2) + 'px';
+            laser.style.width = '0px';
+            laser.style.display = 'block';
+
+            // Beam expansion animation
+            const maxBeamWidth = editorPane.clientWidth - playerCenterX - 10;
+            let currentWidth = 0;
+            
+            function animateLaser() {
+                if (currentWidth < maxBeamWidth) {
+                    currentWidth += 35;
+                    laser.style.width = Math.min(currentWidth, maxBeamWidth) + 'px';
+                    
+                    // Collision check with Bug entities
+                    checkLaserCollision(playerCenterX, playerCenterY, currentWidth);
+                    
+                    requestAnimationFrame(animateLaser);
+                } else {
+                    // Fade out
+                    setTimeout(() => {
+                        laser.style.display = 'none';
+                        laserFired = false;
+                    }, 80);
+                }
+            }
+            requestAnimationFrame(animateLaser);
+        }
+
+        // Laser collision checking with dynamic bug elements
+        function checkLaserCollision(startX, centerY, currentLength) {
+            const endX = startX + currentLength;
+            
+            activeBugs.forEach((bug, index) => {
+                const bugRect = bug.element.getBoundingClientRect();
+                const paneRect = editorPane.getBoundingClientRect();
+                const bugX = bug.x;
+                const bugY = bug.y;
+
+                // Check if bug is intersected by the laser vector
+                if (bugX >= startX && bugX <= endX && Math.abs(bugY - centerY) < 25) {
+                    // Vaporize bug!
+                    destroyBug(bug, index);
+                }
+            });
+        }
+
+        // Vaporize bug entity with high contrast particles
+        function destroyBug(bug, index) {
+            playSound(330, 'sawtooth', 0.35, 0.12);
+            createExplosion(bug.x, bug.y);
+            
+            bug.element.remove();
+            activeBugs.splice(index, 1);
+        }
+
+        // Create elegant digital binary explosion
+        function createExplosion(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const p = document.createElement('div');
+                p.innerText = Math.random() > 0.5 ? '1' : '0';
+                p.style.position = 'absolute';
+                p.style.left = x + 'px';
+                p.style.top = y + 'px';
+                p.style.color = varColorString();
+                p.style.fontSize = '12px';
+                p.style.fontWeight = 'bold';
+                p.style.pointerEvents = 'none';
+                p.style.zIndex = '6';
+                p.style.transition = 'all 0.6s cubic-bezier(0.1, 0.8, 0.3, 1)';
+                
+                editorPane.appendChild(p);
+
+                const angle = (i / 8) * Math.PI * 2;
+                const dist = 30 + Math.random() * 40;
+                
+                setTimeout(() => {
+                    p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+                    p.style.opacity = '0';
+                }, 10);
+
+                setTimeout(() => p.remove(), 700);
+            }
+        }
+
+        function varColorString() {
+            const colors = ['#00f3ff', '#b92eff', '#00f5d4', '#ff2e93'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Toggle Visual Glitch FX (Interactive Action)
+        function toggleGlitch() {
+            glitchEnabled = !glitchEnabled;
+            if (glitchEnabled) {
+                player.classList.add('glitch-anim');
+                sysStatus.innerText = 'GLITCHING';
+                sysStatus.style.color = '#ff2e93';
+                playSound(150, 'sawtooth', 0.5, 0.2);
+            } else {
+                player.classList.remove('glitch-anim');
+                sysStatus.innerText = 'ACTIVE';
+                sysStatus.style.color = '#00ff66';
+                playSound(660, 'sine', 0.2, 0.1);
+            }
+        }
+
+        // Spawn mock Bug Entities inside editor screen bounds
+        function spawnBug() {
+            playSound(440, 'square', 0.15, 0.08);
+            
+            const b = document.createElement('div');
+            b.className = 'bug-entity';
+            
+            const bugTypes = ['SyntaxError', 'NullPointer', 'SegFault', 'MemoryLeak'];
+            const type = bugTypes[Math.floor(Math.random() * bugTypes.length)];
+            b.innerText = type;
+
+            const bugX = 100 + Math.random() * (editorPane.clientWidth - 300);
+            const bugY = 50 + Math.random() * (editorPane.clientHeight - 150);
+
+            b.style.left = bugX + 'px';
+            b.style.top = bugY + 'px';
+
+            editorPane.appendChild(b);
+
+            activeBugs.push({
+                element: b,
+                x: bugX,
+                y: bugY,
+                dirX: Math.random() > 0.5 ? 1.2 : -1.2,
+                dirY: Math.random() > 0.5 ? 1.2 : -1.2
+            });
+        }
+
+        // Reset Position to the center
+        function resetPosition() {
+            playSound(587.33, 'sine', 0.25, 0.12);
+            posX = editorPane.clientWidth / 2 - 24;
+            posY = editorPane.clientHeight / 2 - 24;
+            player.style.left = posX + 'px';
+            player.style.top = posY + 'px';
+            player.style.transform = 'scale(1) rotate(0deg)';
+        }
+
+        // Toggle Orbiting Defensive Shield
+        function toggleOrbiters() {
+            orbitersEnabled = !orbitersEnabled;
+            if (orbitersEnabled) {
+                orbiter1.style.display = 'block';
+                orbiter2.style.display = 'block';
+                playSound(600, 'sine', 0.3, 0.1);
+            } else {
+                orbiter1.style.display = 'none';
+                orbiter2.style.display = 'none';
+                playSound(300, 'sine', 0.2, 0.1);
+            }
+        }
+
+        // Toggle Visual Scanlines Layer
+        function toggleScanlines() {
+            playSound(783.99, 'triangle', 0.15, 0.08);
+            if (scanlineLayer.style.display === 'none') {
+                scanlineLayer.style.display = 'block';
+            } else {
+                scanlineLayer.style.display = 'none';
+            }
+        }
+
+        // Click player cat sprite to play a greeting tone
+        player.addEventListener('click', () => {
+            playSound(1046.50, 'sine', 0.15, 0.1);
+            setTimeout(() => playSound(1318.51, 'sine', 0.15, 0.08), 80);
+            setTimeout(() => playSound(1567.98, 'sine', 0.25, 0.1), 160);
+            
+            // Play quick character bump animation
+            player.style.transform = 'scale(1.3) translateY(-10px)';
+            setTimeout(() => {
+                player.style.transform = 'scale(1) translateY(0)';
+            }, 150);
+        });
+
+        // Core Update Simulation Loop
+        function update() {
+            let moved = false;
+            let dirX = 0;
+            let dirY = 0;
+
+            if (keys['w'] || keys['arrowup']) { posY -= playerSpeed; dirY = -1; moved = true; }
+            if (keys['s'] || keys['arrowdown']) { posY += playerSpeed; dirY = 1; moved = true; }
+            if (keys['a'] || keys['arrowleft']) { posX -= playerSpeed; dirX = -1; moved = true; }
+            if (keys['d'] || keys['arrowright']) { posX += playerSpeed; dirX = 1; moved = true; }
+
+            // Restrict movement strictly inside code editor bounds to keep code readable
+            posX = Math.max(0, Math.min(editorPane.clientWidth - 48, posX));
+            posY = Math.max(0, Math.min(editorPane.clientHeight - 48, posY));
+
+            player.style.left = posX + 'px';
+            player.style.top = posY + 'px';
+
+            if (moved) {
+                player.style.transform = `scale(1.08) rotate(${dirX * 6}deg)`;
+                // Synthesize subtle walking footsteps
+                if (Math.random() < 0.15) {
+                    playSound(180, 'triangle', 0.08, 0.03);
+                }
+            } else {
+                player.style.transform = 'scale(1) rotate(0deg)';
+            }
+
+            // Animate Defensive Orbiters
+            if (orbitersEnabled) {
+                orbitAngle += 0.06;
+                const orbitRadius = 45;
+                const pCenterX = posX + 20;
+                const pCenterY = posY + 20;
+
+                orbiter1.style.left = (pCenterX + Math.cos(orbitAngle) * orbitRadius) + 'px';
+                orbiter1.style.top = (pCenterY + Math.sin(orbitAngle) * orbitRadius) + 'px';
+
+                orbiter2.style.left = (pCenterX - Math.cos(orbitAngle) * orbitRadius) + 'px';
+                orbiter2.style.top = (pCenterY - Math.sin(orbitAngle) * orbitRadius) + 'px';
+            }
+
+            // Simulate Bug movements and check for collisions
+            let isColliding = false;
+            activeBugs.forEach((bug) => {
+                bug.x += bug.dirX;
+                bug.y += bug.dirY;
+
+                // Border bouncing for bugs
+                if (bug.x < 0 || bug.x > editorPane.clientWidth - 100) bug.dirX *= -1;
+                if (bug.y < 0 || bug.y > editorPane.clientHeight - 40) bug.dirY *= -1;
+
+                bug.element.style.left = bug.x + 'px';
+                bug.element.style.top = bug.y + 'px';
+
+                // Check collision with player robot cat bounds
+                const dist = Math.hypot((bug.x - posX), (bug.y - posY));
+                if (dist < 40) {
+                    isColliding = true;
+                    // Knock back bug slightly
+                    bug.dirX *= -1;
+                    bug.dirY *= -1;
+                    bug.x += bug.dirX * 6;
+                    bug.y += bug.dirY * 6;
+                }
+            });
+
+            // Handle HUD values & Flash Alert on Shield Collisions
+            if (isColliding) {
+                if (playerHp > 0) {
+                    playerHp = Math.max(0, playerHp - 0.4);
+                    hpBar.style.width = playerHp + '%';
+                    hpText.innerText = Math.round(playerHp) + '%';
+                    
+                    if (playerHp < 30) {
+                        hpBar.style.background = '#ff2e93';
+                    }
+                }
+                
+                alertBox.style.display = 'block';
+                playSound(120, 'sawtooth', 0.1, 0.15);
+            } else {
+                alertBox.style.display = 'none';
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Initialize 3 bugs at start to present immediate playability
+        setTimeout(() => {
+            spawnBug();
+            spawnBug();
+            spawnBug();
+        }, 1000);
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>

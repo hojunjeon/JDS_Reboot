@@ -9,6 +9,7 @@ from typing import List, Literal, Optional, Dict, Any
 from pydantic import BaseModel, Field
 import yaml
 
+
 class AcceptanceCriteria(BaseModel):
     """Represents a single Acceptance Criterion in a hierarchical tree.
 
@@ -19,6 +20,7 @@ class AcceptanceCriteria(BaseModel):
         depends_on: List of parent AC IDs that this criterion depends on.
         children: Sub-criteria that further specify this criterion.
     """
+
     id: int
     description: str
     status: Literal["pending", "in_progress", "passed", "failed"] = "pending"
@@ -40,6 +42,7 @@ class SeedSpec(BaseModel):
         constraints: Fundamental technical or business boundaries.
         architecture_decisions: Key design choices mapped by their identifier.
     """
+
     title: str
     description: str
     acceptance_criteria_tree: List[AcceptanceCriteria] = Field(default_factory=list)
@@ -73,12 +76,12 @@ def save_to_yaml(spec: SeedSpec, filepath: str = "ouroboros_seed.yaml") -> None:
     data = spec.model_dump()
     with open(filepath, "w", encoding="utf-8") as f:
         yaml.safe_dump(
-            data, 
-            f, 
-            sort_keys=False, 
-            allow_unicode=True, 
-            indent=2, 
-            default_flow_style=False
+            data,
+            f,
+            sort_keys=False,
+            allow_unicode=True,
+            indent=2,
+            default_flow_style=False,
         )
 
 
@@ -95,15 +98,15 @@ def create_default_seed() -> SeedSpec:
                 id=101,
                 description="Menu provides 'Start Game' and 'Stage Selection' command inputs.",
                 status="pending",
-                depends_on=[100]
+                depends_on=[100],
             ),
             AcceptanceCriteria(
                 id=102,
                 description="Terminal boot-up sequence animation plays upon launching.",
                 status="pending",
-                depends_on=[100]
-            )
-        ]
+                depends_on=[100],
+            ),
+        ],
     )
 
     ac2 = AcceptanceCriteria(
@@ -116,15 +119,15 @@ def create_default_seed() -> SeedSpec:
                 id=201,
                 description="Arrow keys and WASD shift the player character continuously in 2D space.",
                 status="pending",
-                depends_on=[200]
+                depends_on=[200],
             ),
             AcceptanceCriteria(
                 id=202,
                 description="Collision boundaries prevent the player from moving outside the terminal window canvas.",
                 status="pending",
-                depends_on=[200]
-            )
-        ]
+                depends_on=[200],
+            ),
+        ],
     )
 
     ac3 = AcceptanceCriteria(
@@ -132,7 +135,7 @@ def create_default_seed() -> SeedSpec:
         description="Weapons execute auto-fire cycles targeting local bug monsters.",
         status="pending",
         depends_on=[200],
-        children=[]
+        children=[],
     )
 
     return SeedSpec(
@@ -142,18 +145,18 @@ def create_default_seed() -> SeedSpec:
         constraints=[
             "Phaser 3 framework must be used for all scene management and rendering pipelines.",
             "All graphics should use retro ASCII / terminal visual aesthetic styles.",
-            "Game must execute perfectly inside standard modern browsers without native installs."
+            "Game must execute perfectly inside standard modern browsers without native installs.",
         ],
         architecture_decisions={
             "AD-001": {
                 "Title": "Phaser 3 Game Engine Selection",
                 "Status": "Accepted",
-                "Rationale": "Phaser 3 provides robust rendering speed and high-level 2D abstraction ideal for WebGL/Canvas deployment."
+                "Rationale": "Phaser 3 provides robust rendering speed and high-level 2D abstraction ideal for WebGL/Canvas deployment.",
             },
             "AD-002": {
                 "Title": "Stateless Simulator Isolation",
                 "Status": "Accepted",
-                "Rationale": "Separating state ticking from Phaser rendering cycles ensures that pure simulation code is easily unit-tested."
-            }
-        }
+                "Rationale": "Separating state ticking from Phaser rendering cycles ensures that pure simulation code is easily unit-tested.",
+            },
+        },
     )
