@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiyoon Debug Survival - Terminal Grid Theme</title>
+    <style>
+        :root {
+            --glow-color: #ffaa00; /* Retro Amber Theme */
+            --bg-color: #0d0700;
+            --text-color: rgba(255, 170, 0, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text-color);
+        }
+
+        /* Scanline CRT Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
+            z-index: 10;
+            background-size: 100% 3px, 5px 100%;
+            pointer-events: none;
+        }
+
+        /* Screen Amber Vignette */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, rgba(255, 170, 0, 0.05) 0%, rgba(0, 0, 0, 0.5) 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Interface Overlay */
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .hud-panel {
+            background: rgba(13, 7, 0, 0.8);
+            border: 1px solid var(--glow-color);
+            padding: 15px 25px;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.15);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        .hud-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            color: #fff;
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+
+        .hud-value {
+            font-size: 20px;
+            color: var(--glow-color);
+            text-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+        }
+
+        /* Diagnostic Monitor on Right Side */
+        .diag-panel {
+            position: absolute;
+            right: 20px;
+            top: 100px;
+            width: 250px;
+            background: rgba(13, 7, 0, 0.7);
+            border: 1px solid rgba(255, 170, 0, 0.5);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.05);
+            pointer-events: none;
+        }
+
+        .diag-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed rgba(255, 170, 0, 0.15);
+            padding-bottom: 2px;
+        }
+
+        .diag-val {
+            color: #fff;
+        }
+
+        /* Player Character */
+        #player {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            z-index: 4;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 0 8px var(--glow-color)) sepia(0.8) hue-rotate(-20deg) saturate(3);
+            image-rendering: pixelated;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            background: rgba(13, 7, 0, 0.85);
+            border: 1px dashed var(--glow-color);
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.1);
+        }
+
+        .instructions span {
+            color: #fff;
+            background: rgba(255, 170, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 2px;
+            border: 1px solid var(--glow-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <div class="hud-panel">
+            <div class="hud-title">THEME 02</div>
+            <div class="hud-value">Terminal Grid & CRT</div>
+        </div>
+        <div class="hud-panel" style="text-align: right;">
+            <div class="hud-title">SYS STATUS</div>
+            <div class="hud-value" style="color: #55ff55; text-shadow: 0 0 8px #55ff55;">ONLINE</div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Panel -->
+    <div class="diag-panel">
+        <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid var(--glow-color); color: #fff;">MONITOR_LOG.sh</div>
+        <div class="diag-row"><span>CPU FREQ</span><span class="diag-val">4.20 GHz</span></div>
+        <div class="diag-row"><span>HEAP USAGE</span><span class="diag-val" id="heap-val">124 MB</span></div>
+        <div class="diag-row"><span>ACTIVE THREADS</span><span class="diag-val">8 / 8</span></div>
+        <div class="diag-row"><span>GC INTERVAL</span><span class="diag-val">300ms</span></div>
+        <div class="diag-row"><span>LEAK RATIO</span><span class="diag-val" style="color: #ff5555;">0.02%</span></div>
+        <div class="diag-row"><span>SECTOR_0X</span><span class="diag-val">0x7FFF80</span></div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="bg-canvas"></canvas>
+    </div>
+
+    <!-- Interactive Player Sprite -->
+    <img id="player" src="./assets/player_alt2.png" alt="Player Robot" />
+
+    <div class="instructions">
+        <span>W</span><span>A</span><span>S</span><span>D</span> 또는 <span>방향키</span>로 플레이어 로봇을 조종해보세요!
+    </div>
+
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        const player = document.getElementById('player');
+
+        // Load premium background image
+        const bgImg = new Image();
+        bgImg.src = './assets/bg_alt2.png';
+
+        // Resize Canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Player Position & Interaction
+        let posX = window.innerWidth / 2 - 24;
+        let posY = window.innerHeight / 2 - 24;
+        const playerSpeed = 7;
+        const keys = {};
+
+        player.style.left = posX + 'px';
+        player.style.top = posY + 'px';
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Grid parameters
+        const gridSize = 40;
+        let glitchTimer = 0;
+        let shakeX = 0;
+        let shakeY = 0;
+
+        // Animation Loop
+        function update() {
+            // Update Player Move
+            let moved = false;
+            let dirX = 0;
+            let dirY = 0;
+
+            if (keys['w'] || keys['arrowup']) { posY -= playerSpeed; dirY = -1; moved = true; }
+            if (keys['s'] || keys['arrowdown']) { posY += playerSpeed; dirY = 1; moved = true; }
+            if (keys['a'] || keys['arrowleft']) { posX -= playerSpeed; dirX = -1; moved = true; }
+            if (keys['d'] || keys['arrowright']) { posX += playerSpeed; dirX = 1; moved = true; }
+
+            // Keep in bounds
+            posX = Math.max(0, Math.min(window.innerWidth - 48, posX));
+            posY = Math.max(0, Math.min(window.innerHeight - 48, posY));
+
+            player.style.left = posX + 'px';
+            player.style.top = posY + 'px';
+
+            if (moved) {
+                player.style.transform = `scale(1.1) rotate(${dirX * 8}deg)`;
+            } else {
+                player.style.transform = 'scale(1) rotate(0deg)';
+            }
+
+            // Glitch and Screen Shake simulation
+            glitchTimer++;
+            if (glitchTimer % 180 === 0 || (glitchTimer % 230 === 0)) {
+                shakeX = (Math.random() - 0.5) * 6;
+                shakeY = (Math.random() - 0.5) * 6;
+                setTimeout(() => { shakeX = 0; shakeY = 0; }, 80);
+            }
+
+            // Diagnostic value variation
+            if (glitchTimer % 30 === 0) {
+                const heap = 120 + Math.floor(Math.random() * 15);
+                document.getElementById('heap-val').innerText = heap + " MB";
+            }
+
+            // Draw premium background image (cover style)
+            if (bgImg.complete) {
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#0d0700';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw Terminal Grid Layout
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
+
+            // Subtle Grid lines
+            ctx.strokeStyle = 'rgba(255, 170, 0, 0.08)';
+            ctx.lineWidth = 1;
+
+            // Vertical Grid
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Horizontal Grid
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Interactive Circle Radar Sweep originating from Player
+            const sweepRadius = (glitchTimer * 3) % 400;
+            ctx.beginPath();
+            ctx.arc(posX + 24, posY + 24, sweepRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 170, 0, ${Math.max(0, 1 - sweepRadius / 400) * 0.25})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw glowing radar markers near player
+            ctx.fillStyle = 'rgba(255, 170, 0, 0.4)';
+            const markers = [
+                {x: posX - 120, y: posY + 80, val: "0xEB1"},
+                {x: posX + 160, y: posY - 100, val: "0x8FA"},
+                {x: posX + 80, y: posY + 150, val: "0x3C9"}
+            ];
+
+            markers.forEach(m => {
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = "9px 'Courier New', monospace";
+                ctx.fillText(m.val, m.x + 8, m.y + 3);
+            });
+
+            ctx.restore();
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>
